@@ -1,0 +1,27 @@
+imageTag: latest
+multiMaster: false
+nodes: 3
+
+resources:
+  limits:
+    cpu: 1000m
+    memory: 300Mi
+  requests:
+    cpu: 0.1
+    memory: 120Mi
+# nodeSelector:
+#   "kubernetes.io/hostname": jonapot
+
+# tolerations:
+#   - key: "dedicated"
+#     operator: "Equal"
+#     value: "small"
+#     effect: NoSchedule
+
+persistentVolume:
+  # storageClass: rancher.io/local-path
+  storageClass: local-path
+  size: 10Gi
+  # selector:
+  #   matchLabels:
+  #     "kubernetes.io/hostname": jonapot

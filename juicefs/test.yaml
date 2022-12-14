@@ -1,0 +1,47 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: juicefs-pvc
+  namespace: "juicefs"
+spec:
+  accessModes:
+  - ReadWriteMany
+  resources:
+    requests:
+      storage: 10M
+  storageClassName: juicefs-sc
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: juicefs-app
+  namespace: "juicefs"
+  labels:
+    app: juicetest
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: juicetest
+  template:
+    metadata:
+      labels:
+        app: juicetest
+    spec:
+      containers:
+      - args:
+        - -c
+        - sleep 10h
+        command:
+        - /bin/sh
+        image: busybox
+        name: app
+        volumeMounts:
+        - mountPath: /data
+          name: juicefs-pv
+      volumes:
+      - name: juicefs-pv
+        persistentVolumeClaim:
+          claimName: juicefs-pvc

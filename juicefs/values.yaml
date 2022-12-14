@@ -1,0 +1,30 @@
+sidecars:
+  livenessProbeImage:
+    repository: k8s.gcr.io/sig-storage/livenessprobe
+    tag: "v2.2.0"
+  nodeDriverRegistrarImage:
+    repository: k8s.gcr.io/sig-storage/csi-node-driver-registrar
+    tag: "v2.0.1"
+  csiProvisionerImage:
+    repository: k8s.gcr.io/sig-storage/csi-provisioner
+    tag: "v2.0.2"
+
+storageClasses:
+  - name: juicefs-sc
+    enabled: true
+    reclaimPolicy: Retain
+    backend:
+      name: "oracle"
+      metaurl: "redis://keydm-keydb.db.svc.cluster.local:6379/5"
+      storage: "s3"
+      accessKey: "f660e1ee503ede82888225bd25f463d532cd8ec5"
+      secretKey: "mhXEw44dFjI06wMGdJ89QJv0QxipYaW2L7HvCjcXCo8="
+      bucket: "https://ax4lqg8sfwoo.compat.objectstorage.eu-amsterdam-1.oraclecloud.com/juice"
+    mountPod:
+      resources:
+        limits:
+          cpu: "2"
+          memory: "200M"
+        requests:
+          cpu: "1"
+          memory: "100M"

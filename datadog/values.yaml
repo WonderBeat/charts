@@ -1,0 +1,79 @@
+datadog:
+  logs:
+    enabled: true
+    containerCollectAll: true
+    resources:
+      limits:
+        cpu: 200m
+        memory: 256Mi
+  apiKey: f37b77dd36b6bc340b21d14b2ca5240b
+  site: datadoghq.com
+  clusterName: mastermind
+  logLevel: WARN
+
+
+
+clusterChecksRunner:
+  # image:
+  #   tag: 7.39.2
+  resources:
+    limits:
+      cpu: 200m
+      memory: 256Mi
+    requests:
+      cpu: 10m
+      memory: 50Mi
+clusterAgent:
+  # image:
+  #   tag: 7.39.2
+  resources:
+    limits:
+      cpu: 0.5
+      memory: 256Mi
+    requests:
+      cpu: 0.1
+      memory: 40Mi
+agents:
+  tolerations:
+  - key: "dedicated"
+    operator: "Equal"
+    value: "small"
+    effect: NoSchedule
+  # image:
+  #   tag: 7.39.2
+  containers:
+    agent:
+      logLevel: WARN
+      resources:
+        limits:
+          cpu: 200m
+          memory: 256Mi
+      requests:
+        cpu: 10m
+        memory: 50Mi
+    processAgent:
+      logLevel: WARN
+      resources:
+        limits:
+          cpu: 200m
+          memory: 256Mi
+        requests:
+          cpu: 10m
+          memory: 50Mi
+    traceAgent:
+      logLevel: WARN
+      resources:
+        limits:
+          cpu: 200m
+          memory: 256Mi
+        requests:
+            cpu: 0.1
+            memory: 70Mi
+    traceAgent:
+      resources:
+        limits:
+          cpu: 200m
+          memory: 256Mi
+        requests:
+          cpu: 0.1
+          memory: 70Mi
