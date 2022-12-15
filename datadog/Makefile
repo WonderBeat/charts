@@ -8,11 +8,11 @@ repo:
 
 install:
 	@make repo
-	@helm install datadog --namespace default -f values.yaml datadog/datadog
+	@helm install datadog --namespace default -f values.yaml -f secrets.yaml datadog/datadog
 
 upgrade:
 	@make repo
-	@helm upgrade datadog --namespace default -f values.yaml datadog/datadog
+	@helm upgrade datadog --namespace default -f values.yaml -f secrets.yaml datadog/datadog
 
 clean:
 	helm delete datadog --namespace default

@@ -6,7 +6,6 @@ datadog:
       limits:
         cpu: 200m
         memory: 256Mi
-  apiKey: f37b77dd36b6bc340b21d14b2ca5240b
   site: datadoghq.com
   clusterName: mastermind
   logLevel: WARN
