@@ -1,0 +1,6 @@
+apiVersion: v2
+name: cloudflare-argo-tunnel
+description: An Argo tunnel chart for k8s
+type: application
+version: 0.1.0
+engine: gotpl

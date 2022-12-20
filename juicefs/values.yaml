@@ -9,15 +9,3 @@ sidecars:
     repository: k8s.gcr.io/sig-storage/csi-provisioner
     tag: "v2.0.2"
 
-storageClasses:
-  - name: juicefs-sc
-    enabled: true
-    reclaimPolicy: Retain
-    mountPod:
-      resources:
-        limits:
-          cpu: "2"
-          memory: "200M"
-        requests:
-          cpu: "1"
-          memory: "100M"

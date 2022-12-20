@@ -1,0 +1,11 @@
+image:
+  repository: strm/dnsmasq
+  tag: latest
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 120Mi
+  requests:
+    cpu: 10m
+    memory: 50Mi

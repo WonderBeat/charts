@@ -20,7 +20,7 @@ upgrade-keydb:
 
 install:
 	@make repo
-	@helm install juicefs-csi-driver juicefs/juicefs-csi-driver --create-namespace -n juicefs -f ./values.yaml -f secret.yaml
+	@helm install juicefs-csi-driver juicefs/juicefs-csi-driver --create-namespace -n juicefs -f values.yaml -f secret.yaml
 
 upgrade:
 	@make repo
