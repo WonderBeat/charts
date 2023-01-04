@@ -1,0 +1,17 @@
+repositories:
+  - name: enapter
+    url: https://enapter.github.io/charts/
+releases:
+  - name: keydb
+    namespace: db
+    chart: enapter/keydb
+    historyMax: 10
+    values:
+      - keydb.yaml
+    strategicMergePatches:
+        - apiVersion: apps/v1
+          kind: StatefulSet
+          metadata:
+            name: keydb
+          spec:
+            podManagementPolicy: Parallel

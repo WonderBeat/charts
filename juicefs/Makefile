@@ -5,18 +5,9 @@ help:
 
 repo:
 	@sh -c "helm repo list | grep -q 'juicefs' || { helm repo add juicefs https://juicedata.github.io/charts/ && helm repo update; };"
-	@sh -c "helm repo list | grep -q 'enapter' || { helm repo add enapter https://enapter.github.io/charts/ && helm repo update; };"
 
 install-keydb:
-	@make repo
-	@helm install keydm enapter/keydb --create-namespace -n db -f keydb.yaml
-
-clean-keydb:
-	@helm delete keydm -n db
-
-upgrade-keydb:
-	@make repo
-	@helm upgrade keydm enapter/keydb --create-namespace -n db -f keydb.yaml
+	@helmfile apply
 
 install:
 	@make repo

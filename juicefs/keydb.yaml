@@ -4,6 +4,9 @@ nodes: 3
 
 configExtraArgs:
   - loglevel: warning
+  - tcp-backlog: 1024
+  - always-show-logo: false
+  # - appendfsync: "no"
 
 resources:
   limits:
