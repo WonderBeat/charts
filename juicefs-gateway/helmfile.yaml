@@ -1,0 +1,28 @@
+repositories:
+  - name: juicefs
+    url: https://juicedata.github.io/charts/
+releases:
+  - name: juicefs-gateway
+    namespace: juicefs
+    chart: juicefs/juicefs-s3-gateway
+    historyMax: 2
+    values:
+      - ingress:
+          annotations:
+            kubernetes.io/ingress.class: traefik
+          className: ""
+          enabled: true
+          hosts:
+            - host: "juicefs.dg"
+              paths:
+                - path: "/"
+                  pathType: Prefix
+      - resources:
+          requests:
+            cpu: 100m
+            memory: 100Mi
+          limits:
+            cpu: 2000m
+            memory: 500Mi
+      - options: "--prefetch 3 --dir-entry-cache 5 --no-banner"
+      - secret.yaml

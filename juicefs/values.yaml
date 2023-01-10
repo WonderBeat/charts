@@ -9,3 +9,30 @@ sidecars:
     repository: k8s.gcr.io/sig-storage/csi-provisioner
     tag: "v2.0.2"
 
+
+controller:
+  resources:
+  limits:
+    cpu: 1000m
+    memory: 512Gi
+  requests:
+    cpu: 100m
+    memory: 100Mi
+
+node:
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 512Gi
+    requests:
+      cpu: 100m
+      memory: 100Mi
+
+  mountPod:
+    resources:
+      limits:
+        cpu: 5000m
+        memory: 512Mb
+      requests:
+        cpu: 10m
+        memory: 50Mb

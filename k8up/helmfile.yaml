@@ -1,0 +1,16 @@
+repositories:
+  - name: k8up
+    url: https://k8up-io.github.io/k8up
+releases:
+  - name: k8up
+    namespace: backup
+    chart: k8up/k8up
+    historyMax: 2
+    values:
+      - globalResources:
+          limits:
+            memory: 200Mi
+            cpu: 1000
+          requests:
+            memory: 50Mi
+            cpu: 10
