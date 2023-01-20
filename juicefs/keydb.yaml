@@ -1,22 +1,27 @@
 imageTag: latest
 multiMaster: false
-nodes: 3
+nodes: 4
 
 configExtraArgs:
   - loglevel: warning
   - tcp-backlog: 1024
   - always-show-logo: false
-  # - appendfsync: "no"
+  - appendfsync: 'no'
+
+
+threads: 2
 
 resources:
   limits:
-    cpu: 1000m
-    memory: 300Mi
+    cpu: 1500m
+    memory: 400Mi
   requests:
     cpu: 0.1
-    memory: 120Mi
+    memory: 40Mi
+
 # nodeSelector:
-#   "kubernetes.io/hostname": jonapot
+  # "beta.kubernetes.io/arch": amd64
+  # "kubernetes.io/hostname": jonapot
 
 # tolerations:
 #   - key: "dedicated"

@@ -5,8 +5,8 @@ metadata:
   namespace: "bigdata"
 spec:
   accessModes:
-  - ReadWriteOnce
+  - ReadWriteMany
   resources:
     requests:
-      storage: 600M
+      storage: 2Gi
   storageClassName: juicefs-sc
