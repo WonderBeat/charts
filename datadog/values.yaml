@@ -8,7 +8,9 @@ datadog:
         memory: 256Mi
   site: datadoghq.com
   clusterName: mastermind
-  logLevel: WARN
+  prometheusScrape:
+    enabled: true
+    serviceEndpoints: true
 
 
 

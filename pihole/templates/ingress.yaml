@@ -1,0 +1,30 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "pihole.name" . }}
+  annotations:
+    kubernetes.io/ingress.class: traefik
+    traefik.frontend.rule.type: AddPrefix
+    traefik.http.middlewares.admin-prefix.addprefix.prefix: /admin
+    traefik.ingress.kubernetes.io/router.middlewares: default-addprefix@kubernetescrd
+spec:
+  rules:
+  - host: "pihole.dg"
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: {{ include "pihole.name" . }}
+            port:
+              number: 80
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: addprefix
+spec:
+  addPrefix:
+    prefix: /admin
+

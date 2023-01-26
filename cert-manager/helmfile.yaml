@@ -1,0 +1,12 @@
+# kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.11.0/cert-manager.crds.yaml
+helmfiles:
+  - path: git::https://github.com/cert-manager/cert-manager/releases/download/v1.11.0/cert-manager.crds.yaml
+repositories:
+  - name: jetstack
+    url: https://charts.jetstack.io
+releases:
+  - name: cert-manager
+    namespace: default
+    chart: jetstack/cert-manager
+    values:
+      - featureGates: AdditionalCertificateOutputFormats=true

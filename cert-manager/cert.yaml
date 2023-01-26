@@ -1,0 +1,37 @@
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: self-signed-issuer
+spec:
+  selfSigned: {}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: swat                          # the name of the certificate; you can use it to view the cert's status
+spec:
+  secretName: swat-tls                # the name of the secret to store a private key and a certificate
+  issuerRef:
+    kind: ClusterIssuer                      # the link to the certificate "issuer", see more below
+    name: self-signed-issuer
+  commonName: "DARKHOLE"                    # the main certificate domain
+  dnsNames:                                  # additional domains (At least one DNS Name or IP address is required)
+  - "*.dg"
+  duration: 8160h
+  # privateKey:
+  #   rotationPolicy: Always
+  subject:
+    organizations:
+      - homelab
+  additionalOutputFormats:
+  - type: CombinedPEM
+  - type: DER
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: TLSStore
+metadata:
+  name: default
+  namespace: default
+spec:
+  defaultCertificate:
+    secretName: swat-tls

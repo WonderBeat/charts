@@ -1,0 +1,7 @@
+releases:
+  - name: dnsmasq
+    namespace: default
+    chart: ./
+    historyMax: 1
+    values:
+      - values.yaml

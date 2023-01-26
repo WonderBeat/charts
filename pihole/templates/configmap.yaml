@@ -1,7 +1,7 @@
 kind: ConfigMap
 apiVersion: v1
 metadata:
-  name: {{ include "dnsmasq.fullname" . }}-config
+  name: {{ include "pihole.fullname" . }}-config
 data:
-  dnsmasq.conf: |
+  10-custom.conf: |
 {{ .Values.config | indent 6 }}

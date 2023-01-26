@@ -1,0 +1,9 @@
+releases:
+  - name: pihole
+    namespace: default
+    chart: ./
+    historyMax: 1
+    values:
+      - values.yaml
+      - secret.yaml
+      - TZ: America/Chicago

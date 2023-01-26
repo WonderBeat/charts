@@ -1,0 +1,49 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: traefiker-ingress
+  annotations:
+    kubernetes.io/ingress.class: traefik
+    traefik.http.middlewares.admin-prefix.addprefix.prefix: /admin
+    # traefik.ingress.kubernetes.io/router.middlewares: kube-system-traefiker@kubernetescrd
+  namespace: kube-system
+spec:
+  rules:
+  - host: "traefik.dg"
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: traefik-dashboard
+            port:
+              number: 9000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: traefik-dashboard
+  namespace: kube-system
+  labels:
+    app.kubernetes.io/instance: traefik
+    app.kubernetes.io/name: traefik-dashboard
+spec:
+  type: ClusterIP
+  ports:
+  - name: traefik
+    port: 9000
+    targetPort: traefik
+    protocol: TCP
+  selector:
+    app.kubernetes.io/instance: traefik
+    app.kubernetes.io/name: traefik
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: traefiker
+  namespace: kube-system
+spec:
+  addPrefix:
+    prefix: /dashboard

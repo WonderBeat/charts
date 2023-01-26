@@ -136,6 +136,7 @@ polynote:
      spark.kubernetes.container.image: apache/spark:3.3.1
      spark.kubernetes.namespace: bigdata
      spark.driver.host: polynote-polynote-headless
+     spark.executor.instances: 2
      # spark.kubernetes.driver.pod.name: polydriver
      # spark.kubernetes.executor.podNamePrefix: spark
   #  spark_submit_args: "--some --arguments"

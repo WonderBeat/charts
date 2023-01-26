@@ -1,26 +1,41 @@
-imageTag: latest
+imageTag: x86_64_v6.2.2
 multiMaster: false
-nodes: 4
+activeReplicas: true
+nodes: 3
 
 configExtraArgs:
   - loglevel: warning
   - tcp-backlog: 1024
   - always-show-logo: false
-  - appendfsync: 'no'
+  - min-replicas-to-write: 1
+  - min-replicas-max-lag: 15
+  - maxmemory: "300430400"
+  - replica-serve-stale-data: false
+  - cluster-migration-barrier: 1
+  # - replica-ignore-maxmemory: false
+  # - appendfsync: 'no'
 
+exporter:
+  enabled: true
+
+
+# service:
+#   annotations:
 
 threads: 2
 
 resources:
   limits:
-    cpu: 1500m
+    cpu: 2
     memory: 400Mi
   requests:
     cpu: 0.1
-    memory: 40Mi
+    memory: 30Mi
 
-# nodeSelector:
-  # "beta.kubernetes.io/arch": amd64
+appendonly: true
+
+nodeSelector:
+  "beta.kubernetes.io/arch": amd64
   # "kubernetes.io/hostname": jonapot
 
 # tolerations:

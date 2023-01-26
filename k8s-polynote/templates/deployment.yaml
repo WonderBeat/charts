@@ -28,6 +28,8 @@ spec:
           - name: ghcr-login-secret
       nodeSelector:
         kubernetes.io/arch: amd64
+      securityContext:
+          fsGroup: 1000
       containers:
         - name: polynote
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"

@@ -1,0 +1,79 @@
+repositories:
+  - name: datadog
+    url: https://helm.datadoghq.com
+releases:
+  - name: datadog
+    namespace: monitoring
+    chart: datadog/datadog
+    historyMax: 1
+    values:
+      - datadog:
+          logs:
+            enabled: true
+            containerCollectAll: true
+            resources:
+              limits:
+                cpu: 200m
+                memory: 256Mi
+          site: datadoghq.com
+          clusterName: mastermind
+          prometheusScrape:
+            enabled: true
+            serviceEndpoints: true
+      - clusterChecksRunner:
+        # image:
+        #   tag: 7.39.2
+          resources:
+            limits:
+              cpu: 200m
+              memory: 256Mi
+            requests:
+              cpu: 10m
+              memory: 50Mi
+      - clusterAgent:
+          # image:
+          #   tag: 7.39.2
+          resources:
+            limits:
+              cpu: 0.5
+              memory: 256Mi
+            requests:
+              cpu: 0.1
+              memory: 40Mi
+      - agents:
+          # tolerations:
+          # - key: "dedicated"
+          #   operator: "Equal"
+          #   value: "small"
+          #   effect: NoSchedule
+          # image:
+          #   tag: 7.39.2
+          containers:
+            agent:
+              logLevel: WARN
+              resources:
+                limits:
+                  cpu: 200m
+                  memory: 256Mi
+              requests:
+                cpu: 10m
+                memory: 50Mi
+            processAgent:
+              logLevel: WARN
+              resources:
+                limits:
+                  cpu: 200m
+                  memory: 256Mi
+                requests:
+                  cpu: 10m
+                  memory: 50Mi
+            traceAgent:
+              logLevel: WARN
+              resources:
+                limits:
+                  cpu: 200m
+                  memory: 256Mi
+                requests:
+                    cpu: 0.1
+                    memory: 70Mi
+      - secrets.yaml
