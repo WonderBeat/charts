@@ -14,8 +14,6 @@ config: |
   server=/stage.san/10.69.101.1#53
   server=/production.san/10.69.101.1#53
   server=/internal.san/10.69.101.1#53
-  # server=/.dg/10.46.0.10#53
-  # server=/k.dg/10.46.0.10#53
   server=/cluster.local/10.46.0.10#53
   server=/clickhouse-0/100.64.0.10#53
   address=/nasduck.io/10.69.101.69
