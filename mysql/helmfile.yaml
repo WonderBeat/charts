@@ -1,0 +1,54 @@
+repositories:
+  - name: bitnami
+    url: https://charts.bitnami.com/bitnami
+releases:
+  - name: mysql
+    namespace: db
+    createNamespace: true
+    chart: bitnami/mysql
+    values:
+      - image:
+          repository: mysql
+          tag: 8.0.32-oracle
+      - primary:
+          nodeSelector:
+            dg.alwaysRun: "true"
+          resources:
+            limits:
+              cpu: 1000m
+              memory: 400Mi
+            requests:
+              cpu: 20m
+              memory: 40Mi
+          persistence:
+            storageClass: local-path
+          configuration: |
+            key_buffer              = 16M
+            read_buffer             = 60K
+            sort_buffer             = 1M
+            innodb_buffer_pool_size = 64M
+            tmp_table               = 8M
+            max_allowed_packet      = 16M
+            thread_stack            = 192K
+            thread_cache_size       = 8
+            # This replaces the startup script and checks MyISAM tables if needed
+            # the first time they are touched
+            # myisam-recover         = BACKUP
+            max_connections        = 25
+      - secondary:
+          resources:
+            limits:
+              cpu: 1000m
+              memory: 300Mi
+            requests:
+              cpu: 20m
+              memory: 40Mi
+          persistence:
+            storageClass: local-path
+      - auth:
+          rootPassword: root
+          database: my_database
+          username: YourSWUser
+          password: HardCodedPassword
+      - metrics:
+          enabled: false

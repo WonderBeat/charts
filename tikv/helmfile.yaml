@@ -1,0 +1,14 @@
+repositories:
+  - name: pingcap
+    url: https://charts.pingcap.org/
+helmfiles:
+  - path: https://raw.githubusercontent.com/pingcap/tidb-operator/v1.4.1/manifests/crd.yaml
+releases:
+  - name: tikv-operator
+    namespace: db
+    createNamespace: true
+    chart: pingcap/tidb-operator
+    # hooks:
+    #   - events: ["prepare"]
+    #     command: "kubectl"
+    #     args: ["apply", "-f", "https://raw.githubusercontent.com/tikv/tikv-operator/master/manifests/crd.v1beta1.yaml"]

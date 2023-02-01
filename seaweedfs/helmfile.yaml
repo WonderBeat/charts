@@ -1,0 +1,193 @@
+environments:
+  default:
+    values:
+      - secret.yaml
+releases:
+  - name: seaweedfs
+    namespace: fs
+    createNamespace: true
+    chart: ./chart
+    values:
+      - master:
+          enabled: true
+          replicas: 1
+          resources: |
+            limits:
+              cpu: 1000m
+              memory: 250Mi
+            requests:
+              cpu: 0.01
+              memory: 50Mi
+          data:
+            type: "persistentVolumeClaim"
+            size: "1Gi"
+            storageClass: "local-path"
+          logs:
+            type: "persistentVolumeClaim"
+            size: "1Gi"
+            storageClass: "local-path"
+      - ingress:
+          enabled: true
+      # - master:
+          # nodeSelector: |
+              # sw-backend: "true"
+              # dg.alwaysRun: "true"
+      - volume:
+          replicas: 4
+          data:
+            type: "persistentVolumeClaim"
+            size: "50Gi"
+            storageClass: "local-path"
+          idx:
+            type: "persistentVolumeClaim"
+            size: "1Gi"
+            storageClass: "local-path"
+          logs:
+            type: "persistentVolumeClaim"
+            size: "1Gi"
+            storageClass: "local-path"
+          compactionMBps: 5
+          resources: |
+            limits:
+              cpu: 1000m
+              memory: 250Mi
+            requests:
+              cpu: 0.01
+              memory: 50Mi
+      - filer:
+          replicas: 1
+          defaultReplicaPlacement: "001"
+          extraEnvironmentVars:
+            WEED_MYSQL_ENABLED: "false"
+          nodeSelector: |
+              sw-backend: "true"
+              dg.alwaysRun: "true"
+          resources: |
+            limits:
+              cpu: 1000m
+              memory: 250Mi
+            requests:
+              cpu: 10m
+              memory: 50Mi
+          data:
+            type: "persistentVolumeClaim"
+            size: "1Gi"
+            storageClass: "local-path"
+          logs:
+            type: "persistentVolumeClaim"
+            size: "1Gi"
+            storageClass: "local-path"
+      - s3:
+          enabled: true
+
+
+  - name: seaweed-config
+    namespace: fs
+    chart: incubator/raw
+    # needs:
+    #   - kyverno/kyverno
+    values:
+      - resources:
+          - apiVersion: v1
+            kind: ConfigMap
+            metadata:
+              name: weedfs-filer-config
+              annotations:
+                "helm.sh/hook": "pre-install"
+            data:
+              filer.toml: |-
+                [filer.options]
+                recursive_delete = false
+                [leveldb2]
+                enabled = false
+                [mysql]
+                enabled = false
+                [redis2]
+                enabled = true
+                address = "redis-master.db.svc.cluster.local:6379"
+                # [redis_cluster2]
+                # enabled = false
+                # addresses = [
+                #     "redis-master.db.svc.cluster.local:6379",
+                #     "redis-replicas-0.redis-headless.db.svc.cluster.local:6379",
+                #     "redis-replicas-1.redis-headless.db.svc.cluster.local:6379",
+                # ]
+                # password = ""
+                # # allows reads from slave servers or the master, but all writes still go to the master
+                # readOnly = false
+                # routeByLatency = false
+          # - apiVersion: kyverno.io/v1
+          #   kind: ClusterPolicy
+          #   metadata:
+          #     name: drop-requested-resources-limits
+          #     annotations:
+          #       policies.kyverno.io/title: Add Environment Variables from ConfigMap
+          #       policies.kyverno.io/subject: Pod
+          #       policies.kyverno.io/category: Other
+          #       policies.kyverno.io/description: >-
+          #         Can't override requests/limits without this
+          #   spec:
+          #     rules:
+          #     - name: add-default-requests
+          #       match:
+          #         any:
+          #         - resources:
+          #             kinds:
+          #               - Pod
+          #             namespaces:
+          #               - fs
+          #       preconditions:
+          #         any:
+          #         - key: "{{`{{request.operation || 'BACKGROUND' }}`}}"
+          #           operator: AnyIn
+          #           value:
+          #           - CREATE
+          #           - UPDATE
+          #       mutate:
+          #         patchStrategicMerge:
+          #           spec:
+          #             containers:
+          #               - (name): "seaweedfs-volume-*"
+          #                 resources:
+          #                   requests:
+          #                     +(memory): "50Mi"
+          #                     +(cpu): "10m"
+  - name: seaweedfs-csi
+    namespace: fs
+    chart: ../../seaweedfs-csi-driver/deploy/helm/seaweedfs-csi-driver/
+    needs:
+      - seaweedfs
+    values:
+      - seaweedfsFiler: "seaweedfs-filer.fs.svc.cluster.local:8888"
+      - csiProvisioner:
+          image: k8s.gcr.io/sig-storage/csi-provisioner:v3.1.0
+      - csiAttacher:
+          image: k8s.gcr.io/sig-storage/csi-attacher:v4.1.0
+      - csiResizer:
+          image: k8s.gcr.io/sig-storage/csi-resizer:v1.4.0
+      - csiNodeDriverRegistrar:
+          image: k8s.gcr.io/sig-storage/csi-node-driver-registrar:v2.6.2
+
+  - name: seaweed-aws-secret
+    namespace: fs
+    chart: incubator/raw
+    # needs:
+    #   - kyverno/kyverno
+    values:
+      - resources:
+          - apiVersion: v1
+            kind: Secret
+            type: Opaque
+            metadata:
+              name: seaweedfs-s3-secret
+              namespace: {{ .Namespace }}
+              annotations:
+                "helm.sh/resource-policy": keep
+                "helm.sh/hook": "pre-install"
+            stringData:
+              admin_access_key_id: {{ .Values.access_key_admin }}
+              admin_secret_access_key: {{ .Values.secret_key_admin }}
+              read_access_key_id: {{ .Values.access_key_read }}
+              read_secret_access_key: {{ .Values.secret_key_read }}
+              seaweedfs_s3_config: |
+                '{"identities":[{"name":"anvAdmin","credentials":[{"accessKey":"{{ .Values.access_key_admin }}","secretKey":"{{ .Values.secret_key_admin }}"}],"actions":["Admin","Read","Write"]},{"name":"anvReadOnly","credentials":[{"accessKey":"{{ .Values.access_key_read }}","secretKey":"{{ .Values.secret_key_read }}"}],"actions":["Read"]}]}'

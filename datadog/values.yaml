@@ -5,7 +5,7 @@ datadog:
     resources:
       limits:
         cpu: 200m
-        memory: 256Mi
+        memory: 200Mi
   site: datadoghq.com
   clusterName: mastermind
   prometheusScrape:
@@ -20,9 +20,8 @@ clusterChecksRunner:
   resources:
     limits:
       cpu: 200m
-      memory: 256Mi
+      memory: 200Mi
     requests:
-      cpu: 10m
       memory: 50Mi
 clusterAgent:
   # image:
@@ -30,9 +29,8 @@ clusterAgent:
   resources:
     limits:
       cpu: 0.5
-      memory: 256Mi
+      memory: 200Mi
     requests:
-      cpu: 0.1
       memory: 40Mi
 agents:
   tolerations:
@@ -48,33 +46,29 @@ agents:
       resources:
         limits:
           cpu: 200m
-          memory: 256Mi
+          memory: 130Mi
       requests:
-        cpu: 10m
         memory: 50Mi
     processAgent:
       logLevel: WARN
       resources:
         limits:
           cpu: 200m
-          memory: 256Mi
+          memory: 110Mi
         requests:
-          cpu: 10m
           memory: 50Mi
     traceAgent:
       logLevel: WARN
       resources:
         limits:
           cpu: 200m
-          memory: 256Mi
+          memory: 200Mi
         requests:
-            cpu: 0.1
             memory: 70Mi
     traceAgent:
       resources:
         limits:
-          cpu: 200m
-          memory: 256Mi
+          cpu: 150m
+          memory: 200Mi
         requests:
-          cpu: 0.1
           memory: 70Mi

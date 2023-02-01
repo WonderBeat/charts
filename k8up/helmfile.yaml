@@ -10,7 +10,6 @@ releases:
       - globalResources:
           limits:
             memory: 200Mi
-            cpu: 1000
+            cpu: 500m
           requests:
-            memory: 50Mi
-            cpu: 10
+            memory: 20Mi

@@ -25,4 +25,7 @@ releases:
             cpu: 2000m
             memory: 500Mi
       - options: "--prefetch 3 --dir-entry-cache 5 --no-banner"
+      - podAnnotations:
+          prometheus.io/scrape: "true"
+          prometheus.io/port: "9567"
       - secret.yaml

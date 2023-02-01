@@ -1,3 +1,4 @@
+# helm install kyverno kyverno/kyverno -n kyverno --create-namespace --set replicaCount=1
 repositories:
   - name: longhorn
     url: https://charts.longhorn.io
@@ -9,11 +10,42 @@ releases:
   - name: longhorn
     namespace: longhorn-system
     chart: longhorn/longhorn
-    version: 1.3.2
+    version: 1.4.0
+    values:
+      - ingress:
+          enabled: true
+          annotations:
+            kubernetes.io/ingress.class: traefik
+          className: ""
+          host: longhorn.dg
+      - persistence:
+          defaultClassReplicaCount: 2
+      - longhornUI:
+          replicas: 1
+      - longhornConversionWebhook:
+          replicas: 1
+          nodeSelector:
+            dg.longhorn: "true"
+      - longhornAdmissionWebhook:
+          replicas: 1
+          nodeSelector:
+            dg.longhorn: "true"
+      - longhornRecoveryBackend:
+          replicas: 1
+          nodeSelector:
+            dg.longhorn: "true"
+      - longhornManager:
+          nodeSelector:
+            dg.longhorn: "true"
+      - longhornDriver:
+          nodeSelector:
+            dg.longhorn: "true"
+
+
   - name: kyverno
     namespace: kyverno
     chart: kyverno/kyverno
-    version: 2.6.1
+    version: 2.6.5
   - name: longhorn-admission-hooks
     namespace: longhorn-system
     chart: incubator/raw

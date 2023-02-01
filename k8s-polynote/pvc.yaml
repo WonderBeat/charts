@@ -8,5 +8,5 @@ spec:
   - ReadWriteMany
   resources:
     requests:
-      storage: 2Gi
-  storageClassName: oracle-fs
+      storage: 1Gi
+  storageClassName: seaweedfs-storage
