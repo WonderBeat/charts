@@ -79,6 +79,9 @@ releases:
             storageClass: "local-path"
       - s3:
           enabled: true
+      - webdav:
+          enabled: true
+          collection: primary
 
 
   - name: seaweed-config
@@ -105,53 +108,6 @@ releases:
                 [redis2]
                 enabled = true
                 address = "redis-master.db.svc.cluster.local:6379"
-                # [redis_cluster2]
-                # enabled = false
-                # addresses = [
-                #     "redis-master.db.svc.cluster.local:6379",
-                #     "redis-replicas-0.redis-headless.db.svc.cluster.local:6379",
-                #     "redis-replicas-1.redis-headless.db.svc.cluster.local:6379",
-                # ]
-                # password = ""
-                # # allows reads from slave servers or the master, but all writes still go to the master
-                # readOnly = false
-                # routeByLatency = false
-          # - apiVersion: kyverno.io/v1
-          #   kind: ClusterPolicy
-          #   metadata:
-          #     name: drop-requested-resources-limits
-          #     annotations:
-          #       policies.kyverno.io/title: Add Environment Variables from ConfigMap
-          #       policies.kyverno.io/subject: Pod
-          #       policies.kyverno.io/category: Other
-          #       policies.kyverno.io/description: >-
-          #         Can't override requests/limits without this
-          #   spec:
-          #     rules:
-          #     - name: add-default-requests
-          #       match:
-          #         any:
-          #         - resources:
-          #             kinds:
-          #               - Pod
-          #             namespaces:
-          #               - fs
-          #       preconditions:
-          #         any:
-          #         - key: "{{`{{request.operation || 'BACKGROUND' }}`}}"
-          #           operator: AnyIn
-          #           value:
-          #           - CREATE
-          #           - UPDATE
-          #       mutate:
-          #         patchStrategicMerge:
-          #           spec:
-          #             containers:
-          #               - (name): "seaweedfs-volume-*"
-          #                 resources:
-          #                   requests:
-          #                     +(memory): "50Mi"
-          #                     +(cpu): "10m"
   - name: seaweedfs-csi
     namespace: fs
     chart: ../../seaweedfs-csi-driver/deploy/helm/seaweedfs-csi-driver/
@@ -175,6 +131,15 @@ releases:
     #   - kyverno/kyverno
     values:
       - resources:
+          - apiVersion: storage.k8s.io/v1
+            kind: StorageClass
+            metadata:
+              name: seaweedfs-primary
+            provisioner: seaweedfs-csi-driver
+            parameters:
+              collection: primary
+              replication: "001" # same rack once
+              diskType: hdd
           - apiVersion: v1
             kind: Secret
             type: Opaque

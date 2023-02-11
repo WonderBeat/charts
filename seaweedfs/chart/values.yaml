@@ -419,6 +419,17 @@ filer:
     skipAuthSecretCreation: false
     auditLogConfig: {}
 
+
+webdav:
+  enabled: false
+  imageName: null
+  imageTag: null
+  restartPolicy: null
+  initContainers: ""
+  extraVolumes: ""
+  extraVolumeMounts: ""
+  port: 7333
+
 s3:
   enabled: false
   repository: null
