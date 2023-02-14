@@ -49,6 +49,9 @@ agents:
           memory: 130Mi
       requests:
         memory: 50Mi
+        limits:
+          cpu: 200m
+          memory: 130Mi
     processAgent:
       logLevel: WARN
       resources:
@@ -65,7 +68,14 @@ agents:
           memory: 200Mi
         requests:
             memory: 70Mi
-    traceAgent:
+    systemProbe:
+      resources:
+        limits:
+          cpu: 150m
+          memory: 200Mi
+        requests:
+          memory: 70Mi
+    initContainers:
       resources:
         limits:
           cpu: 150m

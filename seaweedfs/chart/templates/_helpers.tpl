@@ -85,6 +85,20 @@ Inject extra environment vars in the format key:value, if populated
 {{- end -}}
 {{- end -}}
 
+{{/* Return the proper webdav image */}}
+{{- define "webdav.image" -}}
+{{- if .Values.webdav.imageOverride -}}
+{{- $imageOverride := .Values.webdav.imageOverride -}}
+{{- printf "%s" $imageOverride -}}
+{{- else -}}
+{{- $registryName := default .Values.image.registry .Values.global.localRegistry | toString -}}
+{{- $repositoryName := .Values.image.repository | toString -}}
+{{- $name := .Values.global.imageName | toString -}}
+{{- $tag := .Chart.AppVersion | toString -}}
+{{- printf "%s%s%s:%s" $registryName $repositoryName $name $tag -}}
+{{- end -}}
+{{- end -}}
+
 {{/* Return the proper s3 image */}}
 {{- define "s3.image" -}}
 {{- if .Values.s3.imageOverride -}}

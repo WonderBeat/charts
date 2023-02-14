@@ -1,0 +1,161 @@
+{{- if .Values.webdav.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "seaweedfs.name" . }}-webdav
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ template "seaweedfs.name" . }}
+    chart: {{ template "seaweedfs.chart" . }}
+    heritage: {{ .Release.Service }}
+    release: {{ .Release.Name }}
+spec:
+  replicas: {{ .Values.webdav.replicas | default "1" }}
+  selector:
+    matchLabels:
+      app: {{ template "seaweedfs.name" . }}
+      chart: {{ template "seaweedfs.chart" . }}
+      release: {{ .Release.Name }}
+      component: webdav
+  template:
+    metadata:
+      labels:
+        app: {{ template "seaweedfs.name" . }}
+        chart: {{ template "seaweedfs.chart" . }}
+        release: {{ .Release.Name }}
+        component: webdav
+    spec:
+      restartPolicy: {{ default .Values.global.restartPolicy .Values.webdav.restartPolicy }}
+      {{- if .Values.webdav.tolerations }}
+      tolerations:
+        {{ tpl .Values.webdav.tolerations . | nindent 8 | trim }}
+      {{- end }}
+      {{- if .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        - name: {{ .Values.global.imagePullSecrets }}
+      {{- end }}
+      terminationGracePeriodSeconds: 10
+      {{- if .Values.webdav.priorityClassName }}
+      priorityClassName: {{ .Values.webdav.priorityClassName | quote }}
+      {{- end }}
+      enableServiceLinks: false
+      {{- if .Values.webdav.initContainers }}
+      initContainers:
+        {{ tpl .Values.webdav.initContainers . | nindent 8 | trim }}
+      {{- end }}
+      containers:
+        - name: seaweedfs
+          image: {{ template "webdav.image" . }}
+          imagePullPolicy: {{ default "IfNotPresent" .Values.global.imagePullPolicy }}
+          env:
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: SEAWEEDFS_FULLNAME
+              value: "{{ template "seaweedfs.name" . }}"
+            {{- if .Values.global.extraEnvironmentVars }}
+            {{- range $key, $value := .Values.global.extraEnvironmentVars }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+            {{- end }}
+          command:
+            - "/bin/sh"
+            - "-ec"
+            - | 
+              exec /usr/bin/weed \
+              -logtostderr=true \
+              {{- if .Values.webdav.loggingOverrideLevel }}
+              -v={{ .Values.webdav.loggingOverrideLevel }} \
+              {{- else }}
+              -v={{ .Values.global.loggingLevel }} \
+              {{- end }}
+              webdav \
+              -port={{ .Values.webdav.port | default "7333" }} \
+              {{- if .Values.global.enableSecurity }}
+              -cert.file=/usr/local/share/ca-certificates/client/tls.crt \
+              -key.file=/usr/local/share/ca-certificates/client/tls.key \
+              {{- end }}
+              -filer={{ template "seaweedfs.name" . }}-filer-client:{{ .Values.filer.port }}
+              -cacheCapacityMB={{ .Values.webdav.cacheCapacityMB | default "100" }}
+              -collection={{ .Values.webdav.collection }}
+              -disk={{ .Values.webdav.disk | default "hdd" }}
+              -replication={{ .Values.webdav.replication | default "001" }}
+          volumeMounts:
+            {{- if .Values.global.enableSecurity }}
+            - name: security-config
+              readOnly: true
+              mountPath: /etc/seaweedfs/security.toml
+              subPath: security.toml
+            - name: ca-cert
+              readOnly: true
+              mountPath: /usr/local/share/ca-certificates/ca/
+            - name: master-cert
+              readOnly: true
+              mountPath: /usr/local/share/ca-certificates/master/
+            - name: volume-cert
+              readOnly: true
+              mountPath: /usr/local/share/ca-certificates/volume/
+            - name: filer-cert
+              readOnly: true
+              mountPath: /usr/local/share/ca-certificates/filer/
+            - name: client-cert
+              readOnly: true
+              mountPath: /usr/local/share/ca-certificates/client/
+            {{- end }}
+            {{ tpl .Values.webdav.extraVolumeMounts . | nindent 12 | trim }}
+          ports:
+            - containerPort: {{ .Values.webdav.port }}
+              name: swfs-webdav
+            {{- if .Values.webdav.metricsPort }}
+            - containerPort: {{ .Values.webdav.metricsPort }}
+              name: "metrics"
+            {{- end }}
+          livenessProbe:
+            tcpSocket:
+              port: {{ .Values.webdav.port }}
+            timeoutSeconds: 10
+            periodSeconds: 40
+            initialDelaySeconds: 30
+            successThreshold: 1
+            failureThreshold: 3
+          {{- if .Values.webdav.resources }}
+          resources:
+            {{ tpl .Values.webdav.resources . | nindent 12 | trim }}
+          {{- end }}
+      volumes:
+        {{- if .Values.global.enableSecurity }}
+        - name: security-config
+          configMap:
+            name: {{ template "seaweedfs.name" . }}-security-config
+        - name: ca-cert
+          secret:
+            secretName: {{ template "seaweedfs.name" . }}-ca-cert
+        - name: master-cert
+          secret:
+            secretName: {{ template "seaweedfs.name" . }}-master-cert
+        - name: volume-cert
+          secret:
+            secretName: {{ template "seaweedfs.name" . }}-volume-cert
+        - name: filer-cert
+          secret:
+            secretName: {{ template "seaweedfs.name" . }}-filer-cert
+        - name: client-cert
+          secret:
+            secretName: {{ template "seaweedfs.name" . }}-client-cert
+        {{- end }}
+        {{ tpl .Values.webdav.extraVolumes . | indent 8 | trim }}
+      {{- if .Values.webdav.nodeSelector }}
+      nodeSelector:
+        {{ tpl .Values.webdav.nodeSelector . | indent 8 | trim }}
+      {{- end }}
+{{- end }}
