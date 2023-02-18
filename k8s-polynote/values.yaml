@@ -223,4 +223,3 @@ extraVolumeMounts:
   - name: polynote
     mountPath: /opt/polynote/notebooks/
 
-## Extra volume mounts that will be added to the polynote container
