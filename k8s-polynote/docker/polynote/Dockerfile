@@ -1,6 +1,4 @@
-ARG POLYNOTE_VERSION="latest"
-ARG SCALA_VERSION="2.12"
-FROM polynote/polynote:${POLYNOTE_VERSION}-${SCALA_VERSION}
+FROM polynote/polynote:0.5.0-2.12
 
 WORKDIR /opt
 
