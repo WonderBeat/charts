@@ -3,13 +3,13 @@ name: Docker Image Polynote
 on:
   push:
     branches: [ "main" ]
-    paths:
-      - k8s-polynote/**
+#    paths:
+#      - k8s-polynote/**
 env:
   # Use docker.io for Docker Hub if empty
   REGISTRY: ghcr.io
   # github.repository as <account>/<repo>
-  IMAGE_NAME: polynote-spark
+  IMAGE_NAME: ${{ github.repository }}
 
 
 jobs:
@@ -62,7 +62,7 @@ jobs:
       with:
         context: ./k8s-polynote/docker/polynote/
         push: ${{ github.event_name != 'pull_request' }}
-        tags: ${{ steps.meta.outputs.tags }}
+        tags: polynote-spark
         labels: ${{ steps.meta.outputs.labels }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
