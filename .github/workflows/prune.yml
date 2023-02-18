@@ -1,0 +1,27 @@
+name: prune packages
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+
+  build:
+
+    concurrency:
+      group: single
+      cancel-in-progress: true
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: purge packages
+  # You may pin to the exact commit or the version.
+  # uses: MobileheadHolding/github-action-purge-packages@16e2ecc0100c7edfd52652eae2bea7c075666150
+      uses: actions/delete-package-versions@v4
+      with:
+        package-name: polynote-spark
+        package-type: container
+        min-versions-to-keep: 1
