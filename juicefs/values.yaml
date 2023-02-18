@@ -12,12 +12,12 @@ sidecars:
 
 controller:
   resources:
-  limits:
-    cpu: 1000m
-    memory: 512Gi
-  requests:
-    cpu: 100m
-    memory: 100Mi
+    limits:
+      cpu: 1000m
+      memory: 512Gi
+    requests:
+      cpu: 100m
+      memory: 100Mi
 
 node:
   resources:

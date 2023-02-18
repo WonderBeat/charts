@@ -86,7 +86,7 @@ releases:
 
   - name: seaweed-config
     namespace: fs
-    chart: incubator/raw
+    chart: main/raw
     # needs:
     #   - kyverno/kyverno
     values:
@@ -126,7 +126,7 @@ releases:
 
   - name: seaweed-aws-secret
     namespace: fs
-    chart: incubator/raw
+    chart: main/raw
     # needs:
     #   - kyverno/kyverno
     values:

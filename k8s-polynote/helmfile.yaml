@@ -1,0 +1,28 @@
+releases:
+  - name: polynote
+    namespace: bigdata
+    createNamespace: true
+    chart: ./
+    needs:
+      - polynote-pvc
+    values:
+      - values.yaml
+
+  - name: polynote-pvc
+    namespace: bigdata
+    chart: main/raw
+    values:
+      - resources:
+          - apiVersion: v1
+            kind: PersistentVolumeClaim
+            metadata:
+              name: polynote-pvc
+              namespace: "bigdata"
+            spec:
+              accessModes:
+              - ReadWriteMany
+              resources:
+                requests:
+                  storage: 1Gi
+              storageClassName: seaweedfs-storage
+
