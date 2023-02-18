@@ -1,6 +1,6 @@
 image:
-  repository: ghcr.io/wonderbeat/polynote
-  tag: spark3.3.1
+  repository: ghcr.io/wonderbeat/charts
+  tag: polynote-spark
   pullPolicy: IfNotPresent
   imagePullSecret:
     - name: ghcr-login-secret
