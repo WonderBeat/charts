@@ -1,4 +1,4 @@
-name: Docker Image CI
+name: Docker Image Polynote
 
 on:
   push:
@@ -15,4 +15,4 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Build the Docker image
-      run: docker build k8s-polynote/docker/polynote/ --file Dockerfile --tag spark3
+      run: docker build ./k8s-polynote/docker/polynote/ --file Dockerfile --tag spark3
