@@ -79,6 +79,8 @@ polynote:
    - maven:
        base: http://oss.sonatype.org/content/repositories/snapshots
        changing: true
+   - maven:
+       base: https://jitpack.io
 
   ############################################################################################
   # Default dependencies. Uncommenting the following lines would add some default dependencies
