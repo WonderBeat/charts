@@ -22,6 +22,6 @@ jobs:
   # uses: MobileheadHolding/github-action-purge-packages@16e2ecc0100c7edfd52652eae2bea7c075666150
       uses: actions/delete-package-versions@v4
       with:
-        package-name: polynote-spark
+        package-name: charts
         package-type: container
         min-versions-to-keep: 1
