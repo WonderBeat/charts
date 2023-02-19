@@ -91,6 +91,7 @@ polynote:
    scala:
      - org.apache.hadoop:hadoop-aws:3.2.2
      - org.apache.hadoop:hadoop-client:3.2.2
+     - com.github.The-Analytics-Gladiators:spark-clickhouse-plugin:0.22
   #    - com.mycompany:my-library:jar:all:1.0.0
    python:
      - requests
@@ -136,7 +137,7 @@ polynote:
      spark.driver.userClasspathFirst: true
      spark.executor.userClasspathFirst: true
      spark.master: k8s://https://kubernetes.default.svc:443
-     spark.kubernetes.container.image: apache/spark:3.3.1
+     spark.kubernetes.container.image: apache/spark:v3.3.2
      spark.kubernetes.namespace: bigdata
      spark.driver.host: polynote-polynote-headless
      spark.executor.instances: 2

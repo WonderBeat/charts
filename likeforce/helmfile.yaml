@@ -1,0 +1,47 @@
+#	kubectl create job --from="cronjob/likeforce" likeforce
+
+environments:
+  default:
+    values:
+      - secret.yaml
+releases:
+  - name: likeforce
+    namespace: default
+    chart: main/raw
+    values:
+      - resources:
+          - apiVersion: batch/v1
+            kind: CronJob
+            metadata:
+              name: likeforce
+              labels:
+                app: likeforce
+            spec:
+              schedule: '{{ "012345" | shuffle | substr 0 2 }} */12 * * *' # every 12 hours with poor man randomization ;)
+              concurrencyPolicy: Forbid
+              successfulJobsHistoryLimit: 1
+              failedJobsHistoryLimit: 1
+              jobTemplate:
+                spec:
+                  ttlSecondsAfterFinished: 43200 # 12 hours k8s GC to clean up finished Jobs
+                  backoffLimit: 0
+                  template:
+                    spec:
+                      restartPolicy: Never
+                      imagePullSecrets:
+                        - name: ghcr-login-secret
+                      containers:
+                        - name: likeforce
+                          image: ghcr.io/wonderbeat/likeforce:likeforce
+                          resources:
+                            requests:
+                              memory: "100M"
+                            limits:
+                              memory: "200M"
+                              cpu: "1"
+                          imagePullPolicy: Always
+                          env:
+                            - name: code
+                              value: "{{ .Environment.Values.code }}"
+                          # command: [ "sh", "-c", "python3 src/flink_savepoints/main.py"]
+                          command: ["java", "-jar","/app/app.jar", "1", "2"]
