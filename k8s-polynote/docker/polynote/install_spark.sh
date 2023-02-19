@@ -10,6 +10,5 @@ SPARK_VERSION_DIR="spark-${SPARK_VERSION}"
 SPARK_NAME="spark-${SPARK_VERSION}-bin-hadoop3"
 
 pushd /opt
-
-wget -q "https://www.apache.org/dyn/closer.lua/spark/${SPARK_VERSION_DIR}/${SPARK_NAME}.tgz" && tar zxpf "${SPARK_NAME}.tgz" && mv "${SPARK_NAME}" spark
+wget -q "https://dlcdn.apache.org/spark/${SPARK_VERSION_DIR}/${SPARK_NAME}.tgz" && tar zxpf "${SPARK_NAME}.tgz" && mv "${SPARK_NAME}" spark
 popd

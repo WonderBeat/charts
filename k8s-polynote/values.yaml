@@ -1,7 +1,7 @@
 image:
   repository: ghcr.io/wonderbeat/charts
   tag: polynote-spark
-  pullPolicy: IfNotPresent
+  pullPolicy: Always
   imagePullSecret:
     - name: ghcr-login-secret
 
