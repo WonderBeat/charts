@@ -8,10 +8,17 @@ spec:
     helm.sh/chart: {{ include "pihole.chart" . }}
     app.kubernetes.io/instance: {{ .Release.Name }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
-  type: ClusterIP
+  # type: ClusterIP
+  # clusterIP: 10.46.83.150
+  externalIPs:
+    - 10.46.83.150
   ports:
   - protocol: UDP
-    name: dns
+    name: dns-udp
+    port: 53
+    targetPort: 53
+  - protocol: TCP
+    name: dns-tcp
     port: 53
     targetPort: 53
   - protocol: TCP
