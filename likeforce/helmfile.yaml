@@ -17,7 +17,7 @@ releases:
               labels:
                 app: likeforce
             spec:
-              schedule: '{{ "012345" | shuffle | substr 0 2 }} */12 * * *' # every 12 hours with poor man randomization ;)
+              schedule: '{{ "012345" | shuffle | substr 0 2 }} */3 * * *' # every 3 hours with poor man randomization ;)
               concurrencyPolicy: Forbid
               successfulJobsHistoryLimit: 1
               failedJobsHistoryLimit: 1

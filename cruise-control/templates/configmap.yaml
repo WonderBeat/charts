@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "cruise.fullname" . }}-config
+data:
+  cruisecontrol.properties: |-
+{{- if .Values.ui.ingress.enabled }}
+    webserver.http.cors.origin=http://{{ .Values.ui.ingress.host }}:32080
+    webserver.http.cors.exposeheaders=User-Task-ID,Content-Type
+    webserver.http.cors.allowmethods=OPTIONS,GET,POST
+    webserver.http.cors.enabled=true
+{{- end }}
+    {{- .Values.config | nindent 4 }}
+  capacityJBOD.json: |-
+    {{- .Values.capacityConfig | nindent 4 }}
+  log4j.properties: |-
+    rootLogger.level=INFO
+    appenders=console
+    appender.console.type=Console
+    appender.console.name=STDOUT
+    appender.console.layout.type=PatternLayout
+    appender.console.layout.pattern=[%d] %p %m (%c)%n
+    # Loggers
+    logger.cruisecontrol.name=com.linkedin.kafka.cruisecontrol
+    logger.cruisecontrol.level=info
+
+    logger.detector.name=com.linkedin.kafka.cruisecontrol.detector
+    logger.detector.level=info
+
+    logger.operationLogger.name=operationLogger
+    logger.operationLogger.level=info
+
+    logger.CruiseControlPublicAccessLogger.name=CruiseControlPublicAccessLogger
+    logger.CruiseControlPublicAccessLogger.level=info
+
+    rootLogger.appenderRefs=console
+    rootLogger.appenderRef.console.ref=STDOUT
