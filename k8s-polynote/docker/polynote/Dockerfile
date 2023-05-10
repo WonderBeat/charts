@@ -1,4 +1,4 @@
-FROM polynote/polynote:0.5.0-2.12
+FROM polynote/polynote:0.5.1-2.12-spark3.1
 
 WORKDIR /opt
 

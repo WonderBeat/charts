@@ -1,0 +1,44 @@
+#	kubectl create job --from="cronjob/liquid8" liquid8
+
+environments:
+  default:
+    values:
+      - secret.yaml
+releases:
+  - name: liquid8
+    namespace: bigdata
+    chart: main/raw
+    values:
+      - resources:
+          - apiVersion: batch/v1
+            kind: CronJob
+            metadata:
+              name: liquid8
+              labels:
+                app: liquid8
+            spec:
+              schedule: '*/9 * * * *' # every 9 minutes
+              concurrencyPolicy: Forbid
+              successfulJobsHistoryLimit: 1
+              failedJobsHistoryLimit: 2
+              jobTemplate:
+                spec:
+                  ttlSecondsAfterFinished: 43200 # 12 hours k8s GC to clean up finished Jobs
+                  backoffLimit: 0
+                  template:
+                    spec:
+                      restartPolicy: Never
+                      imagePullSecrets:
+                        - name: ghcr-login-secret
+                      containers:
+                        - name: liquid8
+                          image: ghcr.io/the-analytics-gladiators/liquid8:liquid8
+                          resources:
+                            requests:
+                              memory: "100M"
+                            limits:
+                              memory: "300M"
+                              cpu: "2"
+                          imagePullPolicy: Always
+                          # command: [ "sh", "-c", "python3 src/flink_savepoints/main.py"]
+                          command: ["java", "-jar","/app/app.jar"]
