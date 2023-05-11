@@ -40,5 +40,8 @@ releases:
                               memory: "300M"
                               cpu: "2"
                           imagePullPolicy: Always
+                          env:
+                            - name: BSC_WALLET
+                              value: "{{ .Values.wallet_bsc }}"
                           # command: [ "sh", "-c", "python3 src/flink_savepoints/main.py"]
                           command: ["java", "-jar","/app/app.jar"]
