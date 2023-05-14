@@ -17,7 +17,7 @@ releases:
               labels:
                 app: liquid8
             spec:
-              schedule: '*/9 * * * *' # every 9 minutes
+              schedule: '*/50 * * * *' # every 9 minutes
               concurrencyPolicy: Forbid
               successfulJobsHistoryLimit: 1
               failedJobsHistoryLimit: 2
@@ -44,4 +44,41 @@ releases:
                             - name: BSC_WALLET
                               value: "{{ .Values.wallet_bsc }}"
                           # command: [ "sh", "-c", "python3 src/flink_savepoints/main.py"]
-                          command: ["java", "-jar","/app/app.jar"]
+                          volumeMounts:
+                            - name: logger
+                              mountPath: /app/logback.xml
+                              subPath: logback.xml
+                              readOnly: true
+                          command: ["/usr/bin/timeout", "49m", "java", "-jar","/app/app.jar"]
+                      volumes:
+                        - name: logger
+                          configMap:
+                            name: liquid8-logger
+  - name: liquid8-logger
+    namespace: bigdata
+    chart: main/raw
+    needs:
+      - liquid8
+    values:
+      - resources:
+          - apiVersion: v1
+            kind: ConfigMap
+            metadata:
+              name: liquid8-logger
+              annotations:
+                "helm.sh/hook": "pre-install"
+            data:
+              logback.xml: |-
+                <configuration>
+                  <appender name="STDOUT"
+                  class="ch.qos.logback.core.ConsoleAppender">
+                    <encoder>
+                      <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{10} -
+                      %msg%n</pattern>
+                    </encoder>
+                  </appender>
+                  <logger name="io.gladiators" level="DEBUG" />
+                  <root level="WARN">
+                    <appender-ref ref="STDOUT" />
+                  </root>
+                </configuration>
