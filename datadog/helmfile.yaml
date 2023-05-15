@@ -41,13 +41,15 @@ releases:
               cpu: 0.1
               memory: 40Mi
       - agents:
-          # tolerations:
-          # - key: "dedicated"
-          #   operator: "Equal"
-          #   value: "small"
-          #   effect: NoSchedule
-          # image:
-          #   tag: 7.39.2
+          affinity:
+            nodeAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                - matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: NotIn
+                    values:
+                    - jonapot
           containers:
             agent:
               logLevel: WARN
@@ -80,9 +82,7 @@ releases:
 
   - name: restrict-policy-ko
     namespace: monitoring
-    chart: incubator/raw
-    # needs:
-    #   - kyverno/kyverno
+    chart: main/raw
     values:
       - resources:
           - apiVersion: kyverno.io/v1
@@ -120,7 +120,7 @@ releases:
                         resources:
                           requests:
                             memory: "120Mi"
-                            cpu: "10m"
+                            cpu: "1m"
                           limits:
-                            memory: "200Mi"
-                            cpu: "200m"
+                            memory: "250Mi"
+                            cpu: "700m"

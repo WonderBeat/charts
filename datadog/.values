@@ -34,10 +34,6 @@ clusterAgent:
       memory: 40Mi
 agents:
   tolerations:
-  - key: "dedicated"
-    operator: "Equal"
-    value: "small"
-    effect: NoSchedule
   # image:
   #   tag: 7.39.2
   containers:
