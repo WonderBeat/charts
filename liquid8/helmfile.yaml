@@ -32,24 +32,31 @@ releases:
                         - name: ghcr-login-secret
                       containers:
                         - name: liquid8
-                          image: ghcr.io/the-analytics-gladiators/liquid8:liquid8
+                          image: ghcr.io/the-analytics-gladiators/liquid8:latest
                           resources:
                             requests:
-                              memory: "100M"
+                              memory: "1G"
                             limits:
-                              memory: "300M"
+                              memory: "4G"
                               cpu: "2"
                           imagePullPolicy: Always
                           env:
                             - name: BSC_WALLET
                               value: "{{ .Values.wallet_bsc }}"
-                          # command: [ "sh", "-c", "python3 src/flink_savepoints/main.py"]
                           volumeMounts:
                             - name: logger
                               mountPath: /app/logback.xml
                               subPath: logback.xml
                               readOnly: true
-                          command: ["/usr/bin/timeout", "49m", "java", "-jar","/app/app.jar"]
+                          command:
+                            - /usr/bin/timeout
+                            - 49m
+                            - java
+                            - -Dlogback.configurationFile=​/app/logback.xml
+                            - -Dfile.ending=UTF8
+                            - -Xmx3G
+                            - -jar
+                            - /app/app.jar
                       volumes:
                         - name: logger
                           configMap:
@@ -68,7 +75,7 @@ releases:
               annotations:
                 "helm.sh/hook": "pre-install"
             data:
-              logback.xml: |-
+              logback.xml: |
                 <configuration>
                   <appender name="STDOUT"
                   class="ch.qos.logback.core.ConsoleAppender">
