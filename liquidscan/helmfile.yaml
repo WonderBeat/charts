@@ -1,0 +1,65 @@
+
+environments:
+  default:
+    values:
+      - secret.yaml
+
+releases:
+  - name: liquidscan
+    namespace: bigdata
+    chart: main/raw
+    values:
+      - resources:
+        - apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: liquidscan
+            labels:
+              app: liquidscan
+          spec:
+            replicas: 1
+            selector:
+              matchLabels:
+                app: liquidscan
+            template:
+              metadata:
+                labels:
+                  app: liquidscan
+              spec:
+                imagePullSecrets:
+                  - name: ghcr-login-secret
+                containers:
+                - name: liquidscan
+                  image: ghcr.io/the-analytics-gladiators/liquidscan:latest
+                  env:
+                    - name: REACT_APP_BSC_NODE
+                      value: "{{ .Values.bsc_node }}"
+        - apiVersion: v1
+          kind: Service
+          metadata:
+            name: liquidscan
+          spec:
+            selector:
+              app: liquidscan
+            ports:
+              - protocol: TCP
+                port: 3000
+                targetPort: 3000
+        - apiVersion: networking.k8s.io/v1
+          kind: Ingress
+          metadata:
+            name: liquidscan
+            annotations:
+              kubernetes.io/ingress.class: traefik
+          spec:
+            rules:
+            - host: "liquidscan.dg"
+              http:
+                paths:
+                - path: /
+                  pathType: Prefix
+                  backend:
+                    service:
+                      name: liquidscan
+                      port:
+                        number: 3000
