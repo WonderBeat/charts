@@ -5,6 +5,54 @@ environments:
     values:
       - secret.yaml
 releases:
+  - name: liquid-stats
+    namespace: bigdata
+    chart: main/raw
+    values:
+      - resources:
+          - apiVersion: batch/v1
+            kind: CronJob
+            metadata:
+              name: liquid-stats
+              labels:
+                app: liquid-stats
+            spec:
+              schedule: '*/59 * * * *' # every hour
+              concurrencyPolicy: Forbid
+              successfulJobsHistoryLimit: 1
+              failedJobsHistoryLimit: 2
+              jobTemplate:
+                spec:
+                  template:
+                    spec:
+                      restartPolicy: Never
+                      imagePullSecrets:
+                        - name: ghcr-login-secret
+                      containers:
+                        - name: liquidstats
+                          image: ghcr.io/the-analytics-gladiators/liquid8:latest
+                          resources:
+                            requests:
+                              memory: "1G"
+                            limits:
+                              memory: "2G"
+                              cpu: "2"
+                          imagePullPolicy: Always
+                          env:
+                            - name: BSC_WALLET
+                              value: "{{ .Values.wallet_bsc }}"
+                            - name: trader
+                              value: stats
+                          command:
+                            - /usr/bin/timeout
+                            - 15m
+                            - java
+                            - -Dlogback.configurationFile=​/app/logback.xml
+                            - -Dfile.ending=UTF8
+                            - -Xmx2G
+                            - -jar
+                            - /app/app.jar
+
   - name: liquid8
     namespace: bigdata
     chart: main/raw
@@ -35,7 +83,7 @@ releases:
                           image: ghcr.io/the-analytics-gladiators/liquid8:latest
                           resources:
                             requests:
-                              memory: "1G"
+                              memory: "3G"
                             limits:
                               memory: "4G"
                               cpu: "2"
@@ -43,6 +91,8 @@ releases:
                           env:
                             - name: BSC_WALLET
                               value: "{{ .Values.wallet_bsc }}"
+                            - name: trader
+                              value: big-dick-denis
                           volumeMounts:
                             - name: logger
                               mountPath: /app/logback.xml
@@ -54,7 +104,7 @@ releases:
                             - java
                             - -Dlogback.configurationFile=​/app/logback.xml
                             - -Dfile.ending=UTF8
-                            - -Xmx3G
+                            - -Xmx5G
                             - -jar
                             - /app/app.jar
                       volumes:
@@ -84,7 +134,7 @@ releases:
                       %msg%n</pattern>
                     </encoder>
                   </appender>
-                  <logger name="io.gladiators" level="DEBUG" />
+                  <logger name="io.gladiators" level="INFO" />
                   <root level="WARN">
                     <appender-ref ref="STDOUT" />
                   </root>
