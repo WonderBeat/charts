@@ -20,3 +20,27 @@ releases:
           country: finland
       - persistence:
           size: 30Gi
+  - name: clickhouse-ingress
+    namespace: default
+    chart: main/raw
+    values:
+      - resources:
+        - apiVersion: networking.k8s.io/v1
+          kind: Ingress
+          metadata:
+            name: clickhouse
+            annotations:
+              kubernetes.io/ingress.class: traefik
+          spec:
+            rules:
+             - host: "gladiators.hattid.com"
+               http:
+                 paths:
+                  - path: /
+                    pathType: Prefix
+                    backend:
+                      service:
+                        name: clickhouse
+                        port:
+                          number: 8123
+
