@@ -2,14 +2,14 @@
   "packages": [
     "kubectl",
     "direnv",
-    "(wrapHelm kubernetes-helm { plugins = [ kubernetes-helmPlugins.helm-secrets kubernetes-helmPlugins.helm-diff ]; })",
+    "kubernetes-helm",
     "helmfile",
     "krew"
   ],
   "shell": {
-    "init_hook": null
-  },
-  "nixpkgs": {
-    "commit": "3954218cf613eba8e0dcefa9abe337d26bc48fd0"
+    "init_hook": [
+      "helm plugin install https://github.com/jkroepke/helm-secrets",
+      "helm plugin install https://github.com/databus23/helm-diff"
+    ]
   }
 }

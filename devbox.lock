@@ -1,0 +1,20 @@
+{
+  "lockfile_version": "1",
+  "packages": {
+    "direnv": {
+      "resolved": "github:NixOS/nixpkgs/f80ac848e3d6f0c12c52758c0f25c10c97ca3b62#direnv"
+    },
+    "helmfile": {
+      "resolved": "github:NixOS/nixpkgs/f80ac848e3d6f0c12c52758c0f25c10c97ca3b62#helmfile"
+    },
+    "krew": {
+      "resolved": "github:NixOS/nixpkgs/f80ac848e3d6f0c12c52758c0f25c10c97ca3b62#krew"
+    },
+    "kubectl": {
+      "resolved": "github:NixOS/nixpkgs/f80ac848e3d6f0c12c52758c0f25c10c97ca3b62#kubectl"
+    },
+    "kubernetes-helm": {
+      "resolved": "github:NixOS/nixpkgs/f80ac848e3d6f0c12c52758c0f25c10c97ca3b62#kubernetes-helm"
+    }
+  }
+}

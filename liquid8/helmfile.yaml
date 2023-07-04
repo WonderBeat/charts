@@ -1,4 +1,4 @@
-#	kubectl create job --from="cronjob/liquid8" liquid8
+#	kubectl create job -n bigdata --from="cronjob/liquid8" liquid8
 
 environments:
   default:
@@ -22,6 +22,8 @@ releases:
               successfulJobsHistoryLimit: 1
               failedJobsHistoryLimit: 2
               jobTemplate:
+                ttlSecondsAfterFinished: 43200 # 12 hours k8s GC to clean up finished Jobs
+                backoffLimit: 0
                 spec:
                   template:
                     spec:
@@ -66,6 +68,17 @@ releases:
                 app: liquid8
             spec:
               schedule: '*/50 * * * *' # every 9 minutes
+              affinity:
+                nodeAffinity:
+                  requiredDuringSchedulingIgnoredDuringExecution:
+                    nodeSelectorTerms:
+                    - matchExpressions:
+                      - key: kubernetes.io/hostname
+                        operator: NotIn
+                        values:
+                        - jonapot
+                        - xpand
+                        - vm
               concurrencyPolicy: Forbid
               successfulJobsHistoryLimit: 1
               failedJobsHistoryLimit: 2
@@ -104,7 +117,7 @@ releases:
                             - java
                             - -Dlogback.configurationFile=​/app/logback.xml
                             - -Dfile.ending=UTF8
-                            - -Xmx5G
+                            - -Xmx4G
                             - -jar
                             - /app/app.jar
                       volumes:
