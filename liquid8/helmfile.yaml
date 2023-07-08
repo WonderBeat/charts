@@ -96,9 +96,9 @@ releases:
                           image: ghcr.io/the-analytics-gladiators/liquid8:latest
                           resources:
                             requests:
-                              memory: "3G"
+                              memory: "1G"
                             limits:
-                              memory: "4G"
+                              memory: "1.5G"
                               cpu: "2"
                           imagePullPolicy: Always
                           env:
@@ -117,7 +117,7 @@ releases:
                             - java
                             - -Dlogback.configurationFile=​/app/logback.xml
                             - -Dfile.ending=UTF8
-                            - -Xmx4G
+                            - -Xmx1200m
                             - -jar
                             - /app/app.jar
                       volumes:
