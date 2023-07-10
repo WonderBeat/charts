@@ -14,5 +14,6 @@ releases:
           repository: n0vad3v/fluent-bit-plugin-loki
           tag: main-044d060
       - resources:
-          cpu: 1m
-          memory: 10Mi
+          requests:
+            cpu: 1m
+            memory: 10Mi
