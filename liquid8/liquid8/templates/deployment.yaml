@@ -31,15 +31,16 @@ spec:
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           command:
-            - /usr/bin/timeout
-            - 49m
-            - java
-            - -Dlogback.configurationFile=​/app/logback.xml
-            - -Dfile.ending=UTF8
-            - -Xmx1200m
-            - -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=8000
-            - -jar
-            - /app/app.jar
+            - sh
+            - -c
+            - "java -Dlogback.configurationFile=/app/logback.xml -Xmx1200m -Dfile.ending=UTF8 -jar /app/app.jar"
+            # - java
+            # - -Dlogback.configurationFile=​/app/logback.xml
+            # - -Dfile.ending=UTF8
+            # - -Xmx2200m
+            # - -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=8000
+            # - -jar
+            # - /app/app.jar
           livenessProbe:
             exec:
               command: # Healthcheck file was not updated for some time
