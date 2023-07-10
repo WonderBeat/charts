@@ -1,0 +1,18 @@
+repositories:
+  - name: grafana
+    url: https://grafana.github.io/helm-charts
+  # - name: fluent
+  #   url: https://fluent.github.io/helm-charts
+releases:
+  - name: fluent-bit
+    namespace: monitoring
+    chart: grafana/fluent-bit
+    # chart: fluent/fluent-bit
+    values:
+      - secrets.yaml
+      - image:
+          repository: n0vad3v/fluent-bit-plugin-loki
+          tag: main-044d060
+      - resources:
+          cpu: 1m
+          memory: 10Mi
