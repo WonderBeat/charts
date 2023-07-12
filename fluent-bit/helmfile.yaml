@@ -17,3 +17,12 @@ releases:
           requests:
             cpu: 1m
             memory: 10Mi
+      - affinity:
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+              - matchExpressions:
+                - key: kubernetes.io/hostname
+                  operator: NotIn
+                  values:
+                  - jonapot
