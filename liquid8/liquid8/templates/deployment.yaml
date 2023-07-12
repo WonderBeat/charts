@@ -41,8 +41,8 @@ spec:
               - -c
               - >-
                 find /tmp/healthcheck -mmin -30 | grep .
-              initialDelaySeconds: 200
-              periodSeconds: 30
+            initialDelaySeconds: 360
+            periodSeconds: 30
           readinessProbe:
             exec:
               command: # Healthcheck file was not updated for some time
@@ -50,8 +50,8 @@ spec:
               - -c
               - >-
                 find /tmp/healthcheck -mmin -25 | grep .
-              initialDelaySeconds: 200
-              periodSeconds: 20
+            initialDelaySeconds: 200
+            periodSeconds: 20
           env:
             - name: BSC_WALLET
               value: "{{ .Values.wallet_bsc }}"
