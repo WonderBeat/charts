@@ -1,0 +1,62 @@
+
+
+releases:
+  - name: liquid-streamer
+    namespace: bigdata
+    chart: main/raw
+    values:
+      - resources:
+        - apiVersion: v1
+          kind: PersistentVolumeClaim
+          metadata:
+            name: liquid-streamer-pvc
+            namespace: "bigdata"
+          spec:
+            accessModes:
+              - ReadWriteMany
+            resources:
+              requests:
+                storage: 5Gi
+            storageClassName: seaweedfs-storage
+        - apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: liquid-streamer
+            labels:
+              app: liquid-streamer
+          spec:
+            replicas: 1
+            selector:
+              matchLabels:
+                app: liquid-streamer
+            template:
+              metadata:
+                labels:
+                  app: liquid-streamer
+              spec:
+                imagePullSecrets:
+                  - name: ghcr-login-secret
+                containers:
+                  - name: liquid-streamer
+                    image: ghcr.io/the-analytics-gladiators/liquid-streamer:latest
+                    volumeMounts:
+                      - name: liquid-streamer-volume
+                        mountPath: /data/backup
+                    env:
+                      - name: BACKUP_PATH
+                        value: /data/backup
+                volumes:
+                  - name: liquid-streamer-volume
+                    persistentVolumeClaim: 
+                      claimName: liquid-streamer-pvc
+        - apiVersion: v1
+          kind: Service
+          metadata:
+            name: liquid-streamer
+          spec:
+            selector:
+              app: liquid-streamer
+            ports:
+              - protocol: TCP
+                port: 8088
+                targetPort: 8088
