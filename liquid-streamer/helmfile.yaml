@@ -45,6 +45,15 @@ releases:
                     env:
                       - name: BACKUP_PATH
                         value: /data/backup
+                    livenessProbe:
+                      exec:
+                        command: # Log file was not updated for some time
+                        - sh
+                        - -c
+                        - >-
+                          find /tmp/streamer -mmin -3 | grep '.log'
+                      initialDelaySeconds: 350
+                      periodSeconds: 20
                 volumes:
                   - name: liquid-streamer-volume
                     persistentVolumeClaim: 
