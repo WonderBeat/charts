@@ -26,10 +26,12 @@ releases:
           resources:
             requests:
               cpu: 1m
-              memory: 100Mi
+              memory: 1000Mi
             limits:
               cpu: 2
-              memory: 200Mi
+              memory: 1000Mi
+          persistence:
+            existingClaim: redis-data-redis-master-0
       - replica:
           replicaCount: 2
       - master:
