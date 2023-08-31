@@ -110,7 +110,7 @@ releases:
                 address = "redis-master.db.svc.cluster.local:6379"
   - name: seaweedfs-csi
     namespace: fs
-    chart: ../../seaweedfs-csi-driver/deploy/helm/seaweedfs-csi-driver/
+    chart: ../seaweedfs-csi-driver/deploy/helm/seaweedfs-csi-driver/
     needs:
       - seaweedfs
     values:

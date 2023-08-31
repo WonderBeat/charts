@@ -11,11 +11,11 @@ resources:
     memory: 50Mi
 
 config: |
-  server=/stage.san/10.98.61.43#53
-  server=/production.san/10.98.61.43#53
-  server=/internal.san/10.98.61.43#53
-  server=/cluster.local/10.46.0.10#53
-  server=/clickhouse-0/100.64.0.10#53
+  server=/stage.san/10.98.61.43#55
+  server=/production.san/10.98.61.43#55
+  server=/internal.san/10.98.61.43#55
+  server=/cluster.local/10.46.0.10#55
+  server=/clickhouse-0/100.64.0.10#55
   address=/nasduck.io/10.69.101.69
   address=/router.io/192.168.11.1
   address=/oracle.io/150.230.21.34
