@@ -35,10 +35,10 @@ releases:
                           image: ghcr.io/wonderbeat/likeforce:likeforce
                           resources:
                             requests:
+                              cpu: 10m
                               memory: "100M"
                             limits:
                               memory: "200M"
-                              cpu: "1"
                           imagePullPolicy: Always
                           env:
                             - name: code

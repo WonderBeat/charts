@@ -15,20 +15,16 @@ releases:
       - replica:
           resources:
             requests:
-              cpu: 1m
               memory: 90Mi
             limits:
-              cpu: 1
               memory: 300Mi
       - master:
           nodeSelectors:
             dg.alwaysRunning: "true"
           resources:
             requests:
-              cpu: 1m
               memory: 1000Mi
             limits:
-              cpu: 2
               memory: 1000Mi
           persistence:
             existingClaim: redis-data-redis-master-0

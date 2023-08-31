@@ -185,10 +185,8 @@ polynote:
 
 resources:
   limits:
-    cpu: 2000m
     memory: 2G
   requests:
-    cpu: 10m
     memory: 1G
 
 nodeSelector: {}
