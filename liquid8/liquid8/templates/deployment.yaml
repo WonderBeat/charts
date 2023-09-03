@@ -58,9 +58,13 @@ spec:
             - name: trader
               value: big-dick-denis
           volumeMounts:
-            - name: logger
+            - name: config
               mountPath: /app/logback.xml
               subPath: logback.xml
+              readOnly: true
+            - name: config
+              mountPath: /app/config.yaml
+              subPath: config.yaml
               readOnly: true
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
@@ -77,6 +81,6 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       volumes:
-        - name: logger
+        - name: config
           configMap:
-            name: liquid8-logger
+            name: liquid8-config

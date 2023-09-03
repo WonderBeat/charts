@@ -22,7 +22,7 @@ releases:
               successfulJobsHistoryLimit: 1
               failedJobsHistoryLimit: 2
               jobTemplate:
-                ttlSecondsAfterFinished: 43200 # 12 hours k8s GC to clean up finished Jobs
+                ttlSecondsAfterFinished: 3200
                 backoffLimit: 0
                 spec:
                   template:
@@ -62,3 +62,13 @@ releases:
     chart: ./liquid8
     values:
       - secret.yaml
+      - config: |
+          wssNodesFile: /wss-nodes.txt
+          httpNodesFile: /nodes.txt
+          historicalUpdatesBlocks: 7000
+          blockchain: binance
+          blockBuilderEnabled: true
+          tradingTokens:
+          - 0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c
+          - 0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56
+          - 0x55d398326f99059fF775485246999027B3197955
