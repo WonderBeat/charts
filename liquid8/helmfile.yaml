@@ -46,8 +46,6 @@ releases:
                             - name: trader
                               value: stats
                           command:
-                            - /usr/bin/timeout
-                            - 15m
                             - java
                             - -Dlogback.configurationFile=​/app/logback.xml
                             - -Dfile.ending=UTF8
