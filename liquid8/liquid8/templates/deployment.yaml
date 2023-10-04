@@ -25,7 +25,7 @@ spec:
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
-        - name: {{ include "liquid8.name" . }}
+        - name: {{ include "liquid8.fullname" . }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
@@ -33,7 +33,7 @@ spec:
           command:
             - sh
             - -c
-            - "java -Dlogback.configurationFile=/app/logback.xml -Xmx1200m -Dfile.ending=UTF8 -jar /app/app.jar"
+            - "java -Dlogback.configurationFile=/app/logback.xml -Xmx1100m -Dfile.ending=UTF8 -jar /app/app.jar"
           livenessProbe:
             exec:
               command: # Healthcheck file was not updated for some time
