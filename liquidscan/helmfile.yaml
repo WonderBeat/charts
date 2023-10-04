@@ -34,6 +34,8 @@ releases:
                   env:
                     - name: REACT_APP_BSC_NODE
                       value: "{{ .Values.bsc_node }}"
+                    - name: REACT_APP_POLYGON_NODE
+                      value: "{{ .Values.polygon_node }}"
         - apiVersion: v1
           kind: Service
           metadata:
