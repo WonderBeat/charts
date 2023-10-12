@@ -1,0 +1,25 @@
+repositories:
+  - name: ethereum-helm-charts
+    url: https://ethpandaops.github.io/ethereum-helm-charts
+releases:
+  - name: dshackle
+    namespace: bigdata
+    createNamespace: true
+    chart: ethereum-helm-charts/dshackle
+    values:
+      - image:
+          tag: "0.14.0"
+      - customCommand:
+          - sh
+          - -c
+          - "java -Xms100m -Xmx350m -cp @/app/jib-classpath-file io.emeraldpay.dshackle.StarterKt"
+      - redis:
+          enabled: false
+      - resources:
+          limits:
+            memory: 400M
+          requests:
+            memory: 300M
+      - serviceAccount:
+          create: false
+      - secret.yaml
