@@ -40,6 +40,9 @@ releases:
                               memory: "2G"
                               cpu: "2"
                           imagePullPolicy: Always
+                          env:
+                            - name: trader
+                              value: stats
                           command:
                             - /usr/bin/timeout
                             - 15m
