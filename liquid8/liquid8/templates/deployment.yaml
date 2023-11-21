@@ -53,8 +53,8 @@ spec:
             initialDelaySeconds: 200
             periodSeconds: 20
           env:
-            - name: BSC_WALLET
-              value: "{{ .Values.wallet_bsc }}"
+            - name: WALLET
+              value: "{{ .Values.wallet }}"
             - name: trader
               value: big-dick-denis
           volumeMounts:

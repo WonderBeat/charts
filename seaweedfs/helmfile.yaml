@@ -113,13 +113,13 @@ releases:
     values:
       - seaweedfsFiler: "seaweedfs-filer.fs.svc.cluster.local:8888"
       - csiProvisioner:
-          image: k8s.gcr.io/sig-storage/csi-provisioner:v3.1.0
+          image: registry.k8s.io/sig-storage/csi-provisioner:v3.5.0
       - csiAttacher:
-          image: k8s.gcr.io/sig-storage/csi-attacher:v4.1.0
+          image: registry.k8s.io/sig-storage/csi-attacher:v4.3.0
       - csiResizer:
-          image: k8s.gcr.io/sig-storage/csi-resizer:v1.4.0
+          image: registry.k8s.io/sig-storage/csi-resizer:v1.8.0
       - csiNodeDriverRegistrar:
-          image: k8s.gcr.io/sig-storage/csi-node-driver-registrar:v2.6.2
+          image: registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.8.0
 
   - name: seaweed-aws-secret
     namespace: fs

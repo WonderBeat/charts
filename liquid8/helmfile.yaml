@@ -40,16 +40,12 @@ releases:
                               memory: "2G"
                               cpu: "2"
                           imagePullPolicy: Always
-                          env:
-                            - name: BSC_WALLET
-                              value: "{{ .Values.wallet_bsc }}"
-                            - name: trader
-                              value: stats
                           command:
                             - /usr/bin/timeout
                             - 15m
                             - java
                             - -Dlogback.configurationFile=​/app/logback.xml
+                            - -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:8000
                             - -Dfile.ending=UTF8
                             - -Xmx2G
                             - -jar

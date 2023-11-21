@@ -43,4 +43,13 @@ releases:
                         name: clickhouse
                         port:
                           number: 8123
-
+             - host: "clickhouse.gladiators.io"
+               http:
+                 paths:
+                  - path: /
+                    pathType: Prefix
+                    backend:
+                      service:
+                        name: clickhouse
+                        port:
+                          number: 8123
