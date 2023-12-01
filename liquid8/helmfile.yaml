@@ -48,7 +48,6 @@ releases:
                             - 15m
                             - java
                             - -Dlogback.configurationFile=​/app/logback.xml
-                            - -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:8000
                             - -Dfile.ending=UTF8
                             - -Xmx2G
                             - -jar
@@ -73,17 +72,18 @@ releases:
           - 0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56
           - 0x55d398326f99059fF775485246999027B3197955
 
-  # - name: liquid8-polygon
-  #   namespace: bigdata
-  #   chart: ./liquid8
-  #   values:
-  #     - secret.yaml
-  #     - config: |
-  #         wssNodesFile: /wss-nodes.polygon.txt
-  #         httpNodesFile: /nodes.polygon.txt
-  #         historicalUpdatesBlocks: 300
-  #         blockchain: polygon
-  #         blockBuilderEnabled: false
-  #         trampolineDeadlineMillis: 2000 # whole block
-  #         tradingTokens:
-  #           - 0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270
+  - name: liquid8-polygon
+    namespace: bigdata
+    chart: ./liquid8
+    values:
+      - secret.yaml
+      - config: |
+          blockchain: polygon
+          wssNodesFile: /wss-nodes.polygon.txt
+          httpNodesFile: /nodes.polygon.txt
+          historicalUpdatesBlocks: 300
+          blockBuilderEnabled: false
+          trampolineDeadlineMillis: 2000 # whole block
+          tradingTokens:
+            - 0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270
+          grossCycleIncomeThresholdInCents: 1

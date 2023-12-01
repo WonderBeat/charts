@@ -7,8 +7,25 @@
     "helmfile": {
       "resolved": "github:NixOS/nixpkgs/f80ac848e3d6f0c12c52758c0f25c10c97ca3b62#helmfile"
     },
-    "krew": {
-      "resolved": "github:NixOS/nixpkgs/f80ac848e3d6f0c12c52758c0f25c10c97ca3b62#krew"
+    "krew@latest": {
+      "last_modified": "2023-11-17T14:14:56Z",
+      "resolved": "github:NixOS/nixpkgs/a71323f68d4377d12c04a5410e214495ec598d4c#krew",
+      "source": "devbox-search",
+      "version": "0.4.4",
+      "systems": {
+        "aarch64-darwin": {
+          "store_path": "/nix/store/6aqjwp1fnz93m3q1jpfsh07pbcdi9kkb-krew-0.4.4"
+        },
+        "aarch64-linux": {
+          "store_path": "/nix/store/pbqyqibchzjkx7qd2nd0wmnyqglbw3k0-krew-0.4.4"
+        },
+        "x86_64-darwin": {
+          "store_path": "/nix/store/iv6x38g71jzp0jym1abc2qfiydnbdwnh-krew-0.4.4"
+        },
+        "x86_64-linux": {
+          "store_path": "/nix/store/y75hha1fd2jwqf2ss9nkmniwkbba8s9y-krew-0.4.4"
+        }
+      }
     },
     "kubectl": {
       "resolved": "github:NixOS/nixpkgs/f80ac848e3d6f0c12c52758c0f25c10c97ca3b62#kubectl"

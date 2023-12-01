@@ -12,3 +12,4 @@ coverage
 webdav
 *.class
 *.zip
+.krew

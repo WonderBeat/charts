@@ -4,12 +4,16 @@
     "direnv",
     "kubernetes-helm",
     "helmfile",
-    "krew"
+    "krew@latest"
   ],
   "shell": {
     "init_hook": [
       "helm plugin install https://github.com/jkroepke/helm-secrets",
       "helm plugin install https://github.com/databus23/helm-diff"
     ]
+  },
+  "env": {
+    "KREW_ROOT": "$PWD/.krew",
+    "PATH": "$PWD/.krew/bin:$PATH"
   }
 }
