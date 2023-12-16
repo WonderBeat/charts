@@ -1,19 +1,19 @@
 {
   "packages": [
-    "kubectl",
-    "direnv",
-    "kubernetes-helm",
-    "helmfile",
-    "krew@latest"
+    "krew@latest",
+    "kubectl@latest",
+    "kubernetes-helm@latest",
+    "helmfile@latest",
+    "k9s@latest"
   ],
+  "env": {
+    "KREW_ROOT": "$PWD/.krew",
+    "PATH": "$PWD/.krew/bin:$PATH"
+  },
   "shell": {
     "init_hook": [
       "helm plugin install https://github.com/jkroepke/helm-secrets",
       "helm plugin install https://github.com/databus23/helm-diff"
     ]
-  },
-  "env": {
-    "KREW_ROOT": "$PWD/.krew",
-    "PATH": "$PWD/.krew/bin:$PATH"
   }
 }

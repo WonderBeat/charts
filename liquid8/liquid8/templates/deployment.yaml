@@ -33,14 +33,23 @@ spec:
           command:
             - sh
             - -c
-            - "java -Dlogback.configurationFile=/app/logback.xml -Xmx1100m -Dfile.ending=UTF8 -jar /app/app.jar"
+            - "java -Dlogback.configurationFile=/app/logback.xml -Dfile.ending=UTF8 \
+              -XX:+UseContainerSupport \
+              -XX:ActiveProcessorCount=3 \
+              -jar /app/app.jar"
+
+              # -XX:+FlightRecorder \
+              # -Dcom.sun.management.jmxremote.port=1101 \
+              # -Dcom.sun.management.jmxremote \
+              # -Dcom.sun.management.jmxremote.authenticate=false \
+              # -Dcom.sun.management.jmxremote.ssl=false \
           livenessProbe:
             exec:
               command: # Healthcheck file was not updated for some time
               - sh
               - -c
               - >-
-                find /tmp/healthcheck -mmin -30 | grep .
+                find /tmp/healthcheck -mmin -10 | grep .
             initialDelaySeconds: 360
             periodSeconds: 30
           readinessProbe:
