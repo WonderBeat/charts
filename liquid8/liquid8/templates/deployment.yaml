@@ -49,7 +49,7 @@ spec:
               - sh
               - -c
               - >-
-                find /tmp/healthcheck -mmin -10 | grep .
+                find /tmp/healthcheck -mmin -5 | grep .
             initialDelaySeconds: 360
             periodSeconds: 30
           readinessProbe:
@@ -58,7 +58,7 @@ spec:
               - sh
               - -c
               - >-
-                find /tmp/healthcheck -mmin -25 | grep .
+                find /tmp/healthcheck -mmin -5 | grep .
             initialDelaySeconds: 200
             periodSeconds: 20
           env:
