@@ -1,26 +1,6 @@
 {
   "lockfile_version": "1",
   "packages": {
-    "direnv@latest": {
-      "last_modified": "2023-12-06T11:19:33Z",
-      "resolved": "github:NixOS/nixpkgs/325eb628b89b9a8183256f62d017bfb499b19bd9#direnv",
-      "source": "devbox-search",
-      "version": "2.33.0",
-      "systems": {
-        "aarch64-darwin": {
-          "store_path": "/nix/store/9gkvg5drbla9xgv3iv11rwy3dy5zxza7-direnv-2.33.0"
-        },
-        "aarch64-linux": {
-          "store_path": "/nix/store/hi4l5wc9qzr5vxzn8jkglqgkr91m0pld-direnv-2.33.0"
-        },
-        "x86_64-darwin": {
-          "store_path": "/nix/store/yk7rjy6k3hvx00jvx3dk9bhbzs6v55lp-direnv-2.33.0"
-        },
-        "x86_64-linux": {
-          "store_path": "/nix/store/ckfcj2n93ady092abbjk0f7yggak4w3x-direnv-2.33.0"
-        }
-      }
-    },
     "helmfile@latest": {
       "last_modified": "2023-11-30T09:21:56Z",
       "resolved": "github:NixOS/nixpkgs/f5c27c6136db4d76c30e533c20517df6864c46ee#helmfile",
