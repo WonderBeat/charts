@@ -1,0 +1,36 @@
+releases:
+  - name: hattid-front
+    namespace: bigdata
+    chart: main/raw
+    values:
+      - resources:
+        - apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: hattid-front
+            labels:
+              app: hattid-front
+          spec:
+            replicas: 1
+            selector:
+              matchLabels:
+                app: hattid-front
+            template:
+              metadata:
+                labels:
+                  app: hattid-front
+              spec:
+                containers:
+                - name: hattid-front
+                  image: ghcr.io/blackmorse/hat-all-stats/front:latest
+        - apiVersion: v1
+          kind: Service
+          metadata:
+            name: hattid-front
+          spec:
+            selector:
+              app: hattid-front
+            ports:
+              - protocol: TCP
+                port: 3000
+                targetPort: 3000
