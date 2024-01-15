@@ -1,0 +1,46 @@
+releases:
+  - name: liquid-stats2
+    namespace: bigdata
+    chart: main/raw
+    values:
+      - resources:
+          - apiVersion: batch/v1
+            kind: CronJob
+            metadata:
+              name: liquid-stats2
+              labels:
+                app: liquid-stats2
+            spec:
+              schedule: '*/15 * * * *' 
+              concurrencyPolicy: Forbid
+              successfulJobsHistoryLimit: 1
+              failedJobsHistoryLimit: 2
+              jobTemplate:
+                ttlSecondsAfterFinished: 3200
+                backoffLimit: 0
+                spec:
+                  template:
+                    spec:
+                      restartPolicy: Never
+                      imagePullSecrets:
+                        - name: ghcr-login-secret
+                      containers:
+                        - name: liquidstats2
+                          image: ghcr.io/the-analytics-gladiators/liquid-stats:latest
+                          resources:
+                            requests:
+                              memory: "1G"
+                            limits:
+                              memory: "2G"
+                              cpu: "2"
+                          imagePullPolicy: Always
+                          command:
+                            - /usr/bin/timeout
+                            - 15m
+                            - java
+                            - -Dlogback.configurationFile=​/app/logback.xml
+                            - -Dfile.ending=UTF8
+                            - -Xmx2G
+                            - -jar
+                            - /app/app.jar
+
