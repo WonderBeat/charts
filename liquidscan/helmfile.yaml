@@ -38,8 +38,28 @@ releases:
                       value: "{{ .Values.polygon_node }}"
                     - name: REACT_APP_BACKEND_URL
                       value: https://liquidscan.gladiators.dev/api
+        - apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: liquid-backend
+            labels:
+              app: liquid-backend
+          spec:
+            replicas: 1
+            selector:
+              matchLabels:
+                app: liquid-backend
+            template:
+              metadata:
+                labels:
+                  app: liquid-backend
+              spec:
+                imagePullSecrets:
+                  - name: ghcr-login-secret
+                containers:
                 - name: liquid-backend
                   image: ghcr.io/the-analytics-gladiators/liquid-backend:latest
+
         - apiVersion: v1
           kind: Service
           metadata:
