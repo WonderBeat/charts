@@ -90,9 +90,6 @@ releases:
                       name: liquidscan
                       port:
                         number: 3000
-            - host: "liquidscan.gladiators.dev"
-              http:
-                paths:
                 - path: /api
                   pathType: Prefix
                   backend:
