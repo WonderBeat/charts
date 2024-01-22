@@ -36,6 +36,10 @@ releases:
                       value: "{{ .Values.bsc_node }}"
                     - name: REACT_APP_POLYGON_NODE
                       value: "{{ .Values.polygon_node }}"
+                    - name: REACT_APP_BACKEND_URL
+                      value: https://liquidscan.gladiators.dev/api
+                - name: liquid-backend
+                  image: ghcr.io/the-analytics-gladiators/liquid-backend:latest
         - apiVersion: v1
           kind: Service
           metadata:
@@ -47,6 +51,17 @@ releases:
               - protocol: TCP
                 port: 3000
                 targetPort: 3000
+        - apiVersion: v1
+          kind: Service
+          metadata:
+            name: liquid-backend
+          spec:
+            selector:
+              app: liquid-backend
+            ports:
+              - protocol: TCP
+                port: 8080
+                targetPort: 8080
         - apiVersion: networking.k8s.io/v1
           kind: Ingress
           metadata:
@@ -75,3 +90,13 @@ releases:
                       name: liquidscan
                       port:
                         number: 3000
+            - host: "liquidscan.gladiators.dev"
+              http:
+                paths:
+                - path: /api
+                  pathType: Prefix
+                  backend:
+                    service:
+                      name: liquid-backend
+                      port:
+                        number: 8080
