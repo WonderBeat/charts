@@ -1,0 +1,7 @@
+releases:
+  - name: cloak
+    # namespace: default
+    # createNamespace: true
+    chart: ./cloak
+    values:
+      - secret.yaml
