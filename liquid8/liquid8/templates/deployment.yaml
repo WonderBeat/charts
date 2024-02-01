@@ -34,10 +34,10 @@ spec:
             - sh
             - -c
             - "java -Dlogback.configurationFile=/app/logback.xml -Dfile.ending=UTF8 \
+              -javaagent:/opentelemetry-javaagent.jar
               -XX:+UseContainerSupport \
               -XX:ActiveProcessorCount=3 \
               -jar /app/app.jar"
-
               # -XX:+FlightRecorder \
               # -Dcom.sun.management.jmxremote.port=1101 \
               # -Dcom.sun.management.jmxremote \
@@ -66,6 +66,9 @@ spec:
               value: "{{ .Values.wallet }}"
             - name: trader
               value: big-dick-denis
+            {{- if .Values.env -}}
+            {{ toYaml .Values.env | nindent 12}}
+            {{- end }}
           volumeMounts:
             - name: config
               mountPath: /app/logback.xml

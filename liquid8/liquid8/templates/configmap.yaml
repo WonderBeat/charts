@@ -2,15 +2,13 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: {{ include "liquid8.fullname" . }}-config
-  annotations:
-    "helm.sh/hook": "pre-install"
 data:
   logback.xml: |
     <configuration>
       <appender name="STDOUT"
       class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{10} - %msg%n</pattern>
+            <pattern>%-5level [%thread] %logger{10} - %msg%n</pattern>
         </encoder>
       </appender>
       <logger name="io.gladiators" level="DEBUG" />
