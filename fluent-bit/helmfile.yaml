@@ -1,18 +1,21 @@
 repositories:
-  - name: grafana
-    url: https://grafana.github.io/helm-charts
-  # - name: fluent
-  #   url: https://fluent.github.io/helm-charts
+  - name: fluent
+    url: https://fluent.github.io/helm-charts
 releases:
   - name: fluent-bit
     namespace: monitoring
-    chart: grafana/fluent-bit
-    # chart: fluent/fluent-bit
+    chart: fluent/fluent-bit
     values:
       - secrets.yaml
+      - flush: 13
+      # - logLevel: warn
       - image:
-          repository: n0vad3v/fluent-bit-plugin-loki
-          tag: main-044d060
+          tag: 2.2.2
+      - extraPorts:
+          - name: otel
+            protocol: TCP
+            port: 4318
+            containerPort: 4318
       - resources:
           requests:
             cpu: 1m
