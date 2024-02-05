@@ -1,6 +1,26 @@
 {
   "lockfile_version": "1",
   "packages": {
+    "graphviz@latest": {
+      "last_modified": "2024-01-14T03:55:27Z",
+      "resolved": "github:NixOS/nixpkgs/dd5621df6dcb90122b50da5ec31c411a0de3e538#graphviz",
+      "source": "devbox-search",
+      "version": "9.0.0",
+      "systems": {
+        "aarch64-darwin": {
+          "store_path": "/nix/store/4absg9n3cya48ja069qkvnrp41l1iszc-graphviz-9.0.0"
+        },
+        "aarch64-linux": {
+          "store_path": "/nix/store/rz7pk9fz7hgcsy361lxxqcv09aiaaxvc-graphviz-9.0.0"
+        },
+        "x86_64-darwin": {
+          "store_path": "/nix/store/2y21bhw49k97d4hf4nwf6w2v699xcizw-graphviz-9.0.0"
+        },
+        "x86_64-linux": {
+          "store_path": "/nix/store/bbihmm2rarcj193p70rvw4qvz3nvccqb-graphviz-9.0.0"
+        }
+      }
+    },
     "helmfile@latest": {
       "last_modified": "2023-11-30T09:21:56Z",
       "resolved": "github:NixOS/nixpkgs/f5c27c6136db4d76c30e533c20517df6864c46ee#helmfile",
@@ -98,6 +118,47 @@
         },
         "x86_64-linux": {
           "store_path": "/nix/store/2nsswfqlz4nc2hrbxchz7n98ccg9jfjx-kubernetes-helm-3.13.2"
+        }
+      }
+    },
+    "pyinfra@latest": {
+      "last_modified": "2024-01-14T03:55:27Z",
+      "resolved": "github:NixOS/nixpkgs/dd5621df6dcb90122b50da5ec31c411a0de3e538#pyinfra",
+      "source": "devbox-search",
+      "version": "2.8",
+      "systems": {
+        "aarch64-darwin": {
+          "store_path": "/nix/store/q67l2yfva89pxxzjqaggpmcxsp8k5isj-python3.11-pyinfra-2.8"
+        },
+        "aarch64-linux": {
+          "store_path": "/nix/store/n0591nmv7whwrz75dyf3ha9dd4srjp8p-python3.11-pyinfra-2.8"
+        },
+        "x86_64-darwin": {
+          "store_path": "/nix/store/4gpxlg8cadwqwb3mhfb0scvyrvcp0071-python3.11-pyinfra-2.8"
+        },
+        "x86_64-linux": {
+          "store_path": "/nix/store/xrv3kj0b0jp5n9ka2wc9jfzq04nxpda8-python3.11-pyinfra-2.8"
+        }
+      }
+    },
+    "python311@latest": {
+      "last_modified": "2023-09-27T18:02:17Z",
+      "plugin_version": "0.0.1",
+      "resolved": "github:NixOS/nixpkgs/517501bcf14ae6ec47efd6a17dda0ca8e6d866f9#python311",
+      "source": "devbox-search",
+      "version": "3.11.4",
+      "systems": {
+        "aarch64-darwin": {
+          "store_path": "/nix/store/rycxjkclx801wrhwrgllak0302xzjdvx-python3-3.11.4"
+        },
+        "aarch64-linux": {
+          "store_path": "/nix/store/h4xi1djsmhk7bjdipz58xkfnf8lc9mpm-python3-3.11.4"
+        },
+        "x86_64-darwin": {
+          "store_path": "/nix/store/yqs2zxkxn61xzimdaz1pbgawk2lnm0d8-python3-3.11.4"
+        },
+        "x86_64-linux": {
+          "store_path": "/nix/store/3k7is7nc2xbav8a48vx7arad522d8czx-python3-3.11.4"
         }
       }
     }
