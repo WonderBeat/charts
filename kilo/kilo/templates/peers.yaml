@@ -1,0 +1,14 @@
+{{- range .Values.peers }}
+apiVersion: kilo.squat.ai/v1alpha1
+kind: Peer
+metadata:
+  namespace: {{ $.Release.Namespace }}
+  name: {{ .name | quote }}
+spec:
+  allowedIPs: {{ .ip }}
+  publicKey: {{ .pk }}
+  {{- if .pdk }}
+  presharedKey: {{ .pdk }}
+  {{- end }}
+  persistentKeepalive: {{ .keepAlive | default "62" }}
+{{- end }}

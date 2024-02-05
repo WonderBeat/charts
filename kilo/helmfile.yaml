@@ -1,0 +1,29 @@
+# environments:
+#   default:
+#     values:
+#       - secret.yaml
+releases:
+  - name: kilo
+    namespace: network
+    createNamespace: true
+    chart: ./kilo
+    values:
+      - secret.yaml
+      - port: 7070
+      - mtu: 1380
+      - subnet: "10.54.0.0/16"
+      - compatibility: flannel
+      - affinity:
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+              - matchExpressions:
+                - key: kubernetes.io/hostname
+                  operator: In
+                  values:
+                    - nagi
+                    - k8s-1
+                    - k8s-2
+                    - k8s-3
+                  # - vm
+                  # - xpand

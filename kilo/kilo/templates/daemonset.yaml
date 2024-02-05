@@ -1,0 +1,119 @@
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: kilo
+  labels:
+    app.kubernetes.io/part-of: kilo
+    app.kubernetes.io/name: {{ include "kilo.name" . }}
+    helm.sh/chart: {{ include "kilo.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "kilo.name" . }}
+      app.kubernetes.io/part-of: kilo
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "kilo.name" . }}
+        app.kubernetes.io/part-of: kilo
+    spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: kilo
+      app.kubernetes.io/part-of: kilo
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: kilo
+        app.kubernetes.io/part-of: kilo
+    spec:
+      serviceAccountName: kilo
+      hostNetwork: true
+      containers:
+      - name: kilo
+        image: squat/kilo:0.6.0
+        args:
+        - --kubeconfig=/etc/kubernetes/kubeconfig
+        - --hostname=$(NODE_NAME)
+        - --cni=false
+        - --encapsulate=never
+        - --compatibility=flannel
+        - --local=false
+        - --port={{ .Values.port }}
+        - --mtu={{ .Values.mtu }}
+        - --subnet={{ .Values.subnet }}
+        env:
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        ports:
+        - containerPort: 1107
+          name: metrics
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - name: kilo-dir
+          mountPath: /var/lib/kilo
+        - name: kubeconfig
+          mountPath: /etc/kubernetes
+          readOnly: true
+        - name: lib-modules
+          mountPath: /lib/modules
+          readOnly: true
+        - name: xtables-lock
+          mountPath: /run/xtables.lock
+          readOnly: false
+      initContainers:
+      - name: generate-kubeconfig
+        image: squat/kilo:0.6.0
+        command:
+        - /bin/sh
+        args:
+        - /scripts/init.sh
+        imagePullPolicy: Always
+        volumeMounts:
+        - name: kubeconfig
+          mountPath: /etc/kubernetes
+        - name: scripts
+          mountPath: /scripts/
+          readOnly: true
+        - name: k3s-agent
+          mountPath: /var/lib/rancher/k3s/agent/
+          readOnly: true
+        env:
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+      tolerations:
+      - effect: NoSchedule
+        operator: Exists
+      - effect: NoExecute
+        operator: Exists
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      volumes:
+      - name: kilo-dir
+        hostPath:
+          path: /var/lib/kilo
+      - name: kubeconfig
+        emptyDir: {}
+      - name: scripts
+        configMap:
+          name: kilo-scripts
+      - name: k3s-agent
+        hostPath:
+          path: /var/lib/rancher/k3s/agent
+      - name: lib-modules
+        hostPath:
+          path: /lib/modules
+      - name: xtables-lock
+        hostPath:
+          path: /run/xtables.lock
+          type: FileOrCreate

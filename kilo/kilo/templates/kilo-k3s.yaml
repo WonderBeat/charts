@@ -1,0 +1,89 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: kilo
+  labels:
+    helm.sh/chart: {{ include "kilo.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: kilo
+  labels:
+    helm.sh/chart: {{ include "kilo.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  verbs:
+  - list
+  - patch
+  - watch
+- apiGroups:
+  - kilo.squat.ai
+  resources:
+  - peers
+  verbs:
+  - list
+  - watch
+- apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: kilo
+  labels:
+    helm.sh/chart: {{ include "kilo.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: kilo
+subjects:
+  - kind: ServiceAccount
+    name: kilo
+    namespace: {{ .Release.Namespace }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kilo-scripts
+  labels:
+    helm.sh/chart: {{ include "kilo.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+data:
+  init.sh: |
+    #!/bin/sh
+    cat > /etc/kubernetes/kubeconfig <<EOF
+        apiVersion: v1
+        kind: Config
+        name: kilo
+        clusters:
+        - cluster:
+            server: $(sed -n 's/.*server: \(.*\)/\1/p' /var/lib/rancher/k3s/agent/kubelet.kubeconfig)
+            certificate-authority: /var/lib/rancher/k3s/agent/server-ca.crt
+        users:
+        - name: kilo
+          user:
+            token: $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+        contexts:
+        - name: kilo
+          context:
+            cluster: kilo
+            namespace: ${NAMESPACE}
+            user: kilo
+        current-context: kilo
+    EOF
+---
