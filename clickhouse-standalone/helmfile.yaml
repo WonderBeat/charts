@@ -1,0 +1,46 @@
+releases:
+  - name: clickhouse-standalone
+    namespace: db
+    chart: main/raw
+    values:
+      - resources:
+        - apiVersion: v1
+          kind: PersistentVolumeClaim
+          metadata:
+            name: ssd-200gb-pvc
+            namespace: "db"
+            annotations:
+              volume.kubernetes.io/selected-node: k8s-2
+          spec:
+            accessModes:
+              - ReadWriteOnce
+            storageClassName: ssd-200-gb
+            resources:
+              requests:
+                storage: 200Gi
+        - apiVersion: apps/v1
+          kind: StatefulSet
+          metadata: 
+            name: clickhouse
+            labels:
+              app: clickhouse
+          spec:
+            replicas: 1
+            selector:
+              matchLabels:
+                app: clickhouse
+            template:
+              metadata:
+                labels:
+                  app: clickhouse
+              spec:
+                containers:
+                  - name: clickhouse
+                    image: clickhouse/clickhouse-server:24.1.2.5-alpine
+                    volumeMounts:
+                      - name: ch-data
+                        mountPath: /var/lib/clickhouse
+                volumes:
+                  - name: ch-data
+                    persistentVolumeClaim:
+                      claimName: ssd-200gb-pvc
