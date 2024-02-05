@@ -1,0 +1,80 @@
+#!/usr/bin/env python3
+
+from pyinfra import host
+from pyinfra.facts.server import Command, Hostname
+from pyinfra.operations import apt, files, server
+from pyinfra.facts.files import File, FindInFile
+from pyinfra import logger
+import random
+
+
+apt.packages(
+    name="Ensure installed",
+    packages=["wireguard"],
+    _sudo=True,
+)
+wg_config = "/etc/wireguard/wg0.conf"
+wg_config_attrs = host.get_fact(File, wg_config, _sudo=True)
+hostname = host.get_fact(Hostname)
+
+wg_private_key = None
+wg_public_key = None
+wg_address = None
+if wg_config_attrs:
+    wg_private_key = host.get_fact(
+        Command,
+        "grep -E '^PrivateKey\s?=\s?.+$' /etc/wireguard/wg0.conf | rev | xargs | cut -d ' ' -f1 |rev | xargs",
+        _sudo=True,
+    )
+    wg_public_key = host.get_fact(
+        Command,
+        "echo '%s' |wg pubkey" % wg_private_key,
+        _sudo=True,
+    )
+    wg_address = host.get_fact(
+        Command,
+        "grep -E '^Address\s?=\s?.+$' /etc/wireguard/wg0.conf | rev | xargs | cut -d '=' -f1 | rev | xargs",
+        _sudo=True,
+    )
+else:
+    logger.warn("Bootstrapping new peer %s" % hostname)
+    wg_private_key = host.get_fact(
+        Command,
+        "wg genkey",
+    )
+    wg_public_key = host.get_fact(
+        Command,
+        "echo '%s' |wg pubkey" % wg_private_key,
+        _sudo=True,
+    )
+    random.seed(hash(hostname))
+    suffix = random.randrange(2, 255)
+    wg_address = "10.69.101.%s" % suffix
+
+assert wg_private_key
+assert wg_public_key
+assert wg_address
+logger.info(
+    "{0}: pk {1}, pubk {2}, addr {3}".format(
+        hostname, wg_private_key, wg_public_key, wg_address
+    )
+)
+
+newconf = files.template(
+    name="Wg reconfigure",
+    src="templates/wg0.conf.secret",
+    dest="/etc/wireguard/wg0.conf",
+    private_key=wg_private_key,
+    mode=700,
+    address=wg_address,
+    is_multicloud_gateway=host.data.get("multicloud_gateway"),
+    _sudo=True,
+)
+server.systemd.service(
+    name="Restart wireguard",
+    service="wg-quick@wg0.service",
+    running=True,
+    restarted=newconf.changed,
+    enabled=True,
+    _sudo=True,
+)
