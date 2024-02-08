@@ -20,8 +20,12 @@ releases:
             value: none
           - name: OTEL_METRICS_EXPORTER
             value: none
+          - name: HOST_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.hostIP
           - name: OTEL_EXPORTER_OTLP_ENDPOINT
-            value: http://fluent-bit.monitoring:4318
+            value: http://$(HOST_IP):4318
 
       - config: |
           wssNodesFile: /wss-nodes.txt

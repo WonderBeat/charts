@@ -34,9 +34,9 @@ spec:
             - sh
             - -c
             - "java -Dlogback.configurationFile=/app/logback.xml -Dfile.ending=UTF8 \
-              -javaagent:/opentelemetry-javaagent.jar
               -XX:+UseContainerSupport \
               -XX:ActiveProcessorCount=3 \
+              -javaagent:/opentelemetry-javaagent.jar \
               -jar /app/app.jar"
               # -XX:+FlightRecorder \
               # -Dcom.sun.management.jmxremote.port=1101 \
