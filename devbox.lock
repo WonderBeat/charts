@@ -1,26 +1,6 @@
 {
   "lockfile_version": "1",
   "packages": {
-    "graphviz@latest": {
-      "last_modified": "2024-01-14T03:55:27Z",
-      "resolved": "github:NixOS/nixpkgs/dd5621df6dcb90122b50da5ec31c411a0de3e538#graphviz",
-      "source": "devbox-search",
-      "version": "9.0.0",
-      "systems": {
-        "aarch64-darwin": {
-          "store_path": "/nix/store/4absg9n3cya48ja069qkvnrp41l1iszc-graphviz-9.0.0"
-        },
-        "aarch64-linux": {
-          "store_path": "/nix/store/rz7pk9fz7hgcsy361lxxqcv09aiaaxvc-graphviz-9.0.0"
-        },
-        "x86_64-darwin": {
-          "store_path": "/nix/store/2y21bhw49k97d4hf4nwf6w2v699xcizw-graphviz-9.0.0"
-        },
-        "x86_64-linux": {
-          "store_path": "/nix/store/bbihmm2rarcj193p70rvw4qvz3nvccqb-graphviz-9.0.0"
-        }
-      }
-    },
     "helmfile@latest": {
       "last_modified": "2023-11-30T09:21:56Z",
       "resolved": "github:NixOS/nixpkgs/f5c27c6136db4d76c30e533c20517df6864c46ee#helmfile",

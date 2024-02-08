@@ -6,7 +6,7 @@
     "helmfile@latest",
     "k9s@latest",
     "python311@latest",
-    "pyinfra@latest",
+    "pyinfra@latest"
   ],
   "env": {
     "KREW_ROOT": "$PWD/.krew",
