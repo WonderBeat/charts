@@ -17,6 +17,10 @@ wg_config = "/etc/wireguard/wg0.conf"
 wg_config_attrs = host.get_fact(File, wg_config, _sudo=True)
 hostname = host.get_fact(Hostname)
 
+host_ips = host.get_fact(
+    Command, "ip -4 -o addr show scope global | awk '{gsub(/\/.*/," ",$4); print $4}'"
+)
+
 wg_private_key = None
 wg_public_key = None
 wg_address = None
@@ -68,6 +72,7 @@ newconf = files.template(
     mode=700,
     address=wg_address,
     is_multicloud_gateway=host.data.get("multicloud_gateway"),
+    host_ips=host_ips,
     _sudo=True,
 )
 server.systemd.service(
