@@ -18,7 +18,9 @@ wg_config_attrs = host.get_fact(File, wg_config, _sudo=True)
 hostname = host.get_fact(Hostname)
 
 host_ips = host.get_fact(
-    Command, "ip -4 -o addr show scope global | awk '{gsub(/\/.*/," ",$4); print $4}'"
+    Command,
+    "ip -4 -o addr show scope global"
+    # Command, "ip -4 -o addr show scope global | awk '{gsub(/\\/.*/," ",$4); print $4}'"
 )
 
 wg_private_key = None
