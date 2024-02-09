@@ -1,0 +1,40 @@
+repositories:
+  - name: open-telemetry
+    url:  https://open-telemetry.github.io/opentelemetry-helm-charts
+releases:
+  - name: opentelemetry
+    namespace: monitoring
+    chart: open-telemetry/opentelemetry-collector
+    values:
+      - secrets.yaml
+      - mode: daemonset
+      - useGOMEMLIMIT: true
+      - resources:
+          limits:
+            memory: 256Mi
+      - ports:
+          metrics:
+            enabled: true
+      - presets:
+          logsCollection:
+            enabled: true
+          hostMetrics:
+            enabled: true
+          kubernetesAttributes:
+            enabled: true
+          kubeletMetrics:
+            enabled: true
+          clusterMetrics:
+            enabled: false
+      - config:
+          receivers:
+            jaeger: null
+            zipkin: null
+            prometheus:
+              config:
+                scrape_configs:
+                  - job_name: opentelemetry-collector
+                    scrape_interval: 20s
+                    static_configs:
+                      - targets:
+                          - ${env:MY_POD_IP}:8888
