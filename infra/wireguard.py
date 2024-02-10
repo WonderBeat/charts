@@ -23,6 +23,8 @@ host_ips = host.get_fact(
     # Command, "ip -4 -o addr show scope global | awk '{gsub(/\\/.*/," ",$4); print $4}'"
 )
 
+public_ip = host.get_fact(Command, "curl https://ipinfo.io/ip")
+
 wg_private_key = None
 wg_public_key = None
 wg_address = None
@@ -61,9 +63,10 @@ assert wg_private_key
 assert wg_public_key
 assert wg_address
 logger.info(
-    "{0}: pk {1}, pubk {2}, addr {3}".format(
-        hostname, wg_private_key, wg_public_key, wg_address
-    )
+    (
+        "[Peer] #{0}\n" + "PublicKey = {1}\n"
+        "AllowedIPs = {2}/32\n" + "Endpoint = {3}:6969\n"
+    ).format(hostname, wg_public_key, wg_address, public_ip)
 )
 
 newconf = files.template(
