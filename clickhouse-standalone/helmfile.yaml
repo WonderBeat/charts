@@ -1,9 +1,20 @@
+environments:
+  default:
+    values:
+      - secret.users.yaml
 releases:
   - name: clickhouse-standalone
     namespace: db
     chart: main/raw
     values:
       - resources:
+        - apiVersion: v1
+          kind: ConfigMap
+          metadata:
+            name: clickhouse-config
+          data:
+            users.xml: |
+{{ .Values.config | indent 14 }}
         - apiVersion: v1
           kind: PersistentVolumeClaim
           metadata:
@@ -40,7 +51,23 @@ releases:
                     volumeMounts:
                       - name: ch-data
                         mountPath: /var/lib/clickhouse
+                      - name: users-config
+                        mountPath: /etc/clickhouse-server/users.d
                 volumes:
+                  - name: users-config
+                    configMap:
+                      name: clickhouse-config
                   - name: ch-data
                     persistentVolumeClaim:
                       claimName: ssd-200gb-pvc
+        - apiVersion: v1
+          kind: Service
+          metadata:
+            name: clickhouse-standalone
+          spec:
+            selector:
+              app: clickhouse
+            ports:
+              - protocol: TCP
+                port: 8123
+                targetPort: 8123
