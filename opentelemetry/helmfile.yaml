@@ -10,8 +10,10 @@ releases:
       - mode: daemonset
       - useGOMEMLIMIT: true
       - resources:
+          requests:
+            memory: 70Mi
           limits:
-            memory: 256Mi
+            memory: 120Mi
       - ports:
           metrics:
             enabled: true
