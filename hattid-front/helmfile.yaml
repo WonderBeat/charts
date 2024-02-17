@@ -1,36 +1,148 @@
+environments:
+  default:
+    values:
+      - secret.akka_loader.yaml
 releases:
+#            volumeClaimTemplates:
+#            - apiVersion: v1
+#              kind: PersistentVolumeClaim
+#              metadata:
+#                name: varlib
+#              spec:
+#                accessModes:
+#                  - ReadWriteOnce
+#                resources:
+#                  requests:
+#                    storage: 100Gi
+#                storageClassName: ssd-200-gb
+#                volumeMode: Filesystem
   - name: hattid-front
     namespace: bigdata
     chart: main/raw
     values:
       - resources:
-        - apiVersion: apps/v1
-          kind: Deployment
-          metadata:
-            name: hattid-front
-            labels:
-              app: hattid-front
-          spec:
-            replicas: 1
-            selector:
-              matchLabels:
-                app: hattid-front
-            template:
-              metadata:
-                labels:
-                  app: hattid-front
-              spec:
-                containers:
-                - name: hattid-front
-                  image: ghcr.io/blackmorse/hat-all-stats/front:latest
+        #        - apiVersion: apps/v1
+        #          kind: Deployment
+        #          metadata:
+        #            name: hattid-front
+        #            labels:
+        #              app: hattid-front
+        #          spec:
+        #            replicas: 1
+        #            selector:
+        #              matchLabels:
+        #                app: hattid-front
+        #            template:
+        #              metadata:
+        #                labels:
+        #                  app: hattid-front
+        #              spec:
+        #                containers:
+        #                - name: hattid-front
+        #                  image: ghcr.io/blackmorse/hat-all-stats/front:latest
+        #        - apiVersion: v1
+        #          kind: Service
+        #          metadata:
+        #            name: hattid-front
+        #          spec:
+        #            selector:
+        #              app: hattid-front
+        #            ports:
+        #              - protocol: TCP
+        #                port: 3000
+        #                targetPort: 3000
         - apiVersion: v1
-          kind: Service
+          kind: ConfigMap
           metadata:
-            name: hattid-front
-          spec:
-            selector:
-              app: hattid-front
-            ports:
-              - protocol: TCP
-                port: 3000
-                targetPort: 3000
+            name: akka-loader-config
+          data: 
+            application.conf: |
+{{ .Values.config | indent 14 }}
+        - apiVersion: batch/v1
+          kind: CronJob
+          metadata:
+            name: hattid-cup-loader
+            labels:
+              app: hattid-cup-loader
+          spec: 
+            schedule: '18 * * * *'
+            concurrencyPolicy: Forbid
+            jobTemplate:
+              ttlSecondsAfterFinished: 3200
+              successfulJobsHistoryLimit: 2
+              backoffLimit: 0
+              spec:
+                template:
+                  spec:
+                    restartPolicy: Never
+                    volumes:
+                      - name: config
+                        configMap:
+                          name: akka-loader-config
+                    containers:
+                      - name: hattid-cup-loader
+                        image: ghcr.io/blackmorse/hat-all-stats/akka_loader:latest
+                        resources:
+                          limits:
+                            memory: "3G"
+                            cpu: "2"
+                        imagePullPolicy: Always
+                        env:
+                          - name: AKKA_CONFIG
+                            value: /config/application.conf
+                        volumeMounts:
+                          - name: config
+                            mountPath: /config
+                        command:
+                          - java
+                          - "-Dconfig.file=/config/application.conf"
+                          - -jar
+                          - /app/akka-loader-assembly-0.1.jar
+                          - loadScheduled
+                          - --entity
+                          - cup
+
+        - apiVersion: batch/v1
+          kind: CronJob
+          metadata:
+            name: hattid-league-loader
+            labels:
+              app: hattid-league-loader
+          spec: 
+            schedule: '21 * * * *'
+            concurrencyPolicy: Forbid
+            jobTemplate:
+              ttlSecondsAfterFinished: 3200
+              successfulJobsHistoryLimit: 2
+              backoffLimit: 0
+              spec:
+                template:
+                  spec:
+                    restartPolicy: Never
+                    volumes:
+                      - name: config
+                        configMap:
+                          name: akka-loader-config
+                    containers:
+                      - name: hattid-league-loader
+                        image: ghcr.io/blackmorse/hat-all-stats/akka_loader:latest
+                        resources:
+                          limits:
+                            memory: "3G"
+                            cpu: "2"
+                        imagePullPolicy: Always
+                        env:
+                          - name: AKKA_CONFIG
+                            value: /config/application.conf
+                        volumeMounts:
+                          - name: config
+                            mountPath: /config
+                        command:
+                          - java
+                          - "-Dconfig.file=/config/application.conf"
+                          - -jar
+                          - /app/akka-loader-assembly-0.1.jar
+                          - loadScheduled
+                          - --entity
+                          - league
+
