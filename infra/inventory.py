@@ -2,7 +2,7 @@
 
 oracle_denis = [
     "oracle",
-    ("nagi", {"k8s_master": False}),
+    ("nagi", {"k8s_master": True}),
     ("kesaram", {"k8s_master": True, "multicloud_gateway": True}),
 ]
 
