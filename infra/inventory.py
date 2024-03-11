@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
 oracle_denis = [
-    "oracle",
-    ("nagi", {"k8s_master": True}),
+    ("oracle", {"multicloud_gateway": True}),
+    ("nagi", {"k8s_master": True, "multicloud_gateway": True}),
     ("kesaram", {"k8s_master": True, "multicloud_gateway": True}),
 ]
 

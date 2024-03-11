@@ -12,6 +12,7 @@ releases:
       - resources:
           requests:
             memory: 70Mi
+            cpu: 10m
           limits:
             memory: 120Mi
       - ports:

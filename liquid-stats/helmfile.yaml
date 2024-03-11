@@ -29,10 +29,10 @@ releases:
                           image: ghcr.io/the-analytics-gladiators/liquid-stats:latest
                           resources:
                             requests:
-                              memory: "1G"
+                              memory: "500Mi"
+                              cpu: 300m
                             limits:
-                              memory: "2G"
-                              cpu: "2"
+                              memory: "1G"
                           imagePullPolicy: Always
                           command:
                             - /usr/bin/timeout
@@ -40,7 +40,6 @@ releases:
                             - java
                             - -Dlogback.configurationFile=​/app/logback.xml
                             - -Dfile.ending=UTF8
-                            - -Xmx2G
                             - -jar
                             - /app/app.jar
 
