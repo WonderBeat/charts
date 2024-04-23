@@ -1,4 +1,7 @@
-
+environments:
+  default:
+    values:
+      - secret.yaml
 
 releases:
   - name: liquid-streamer
@@ -45,15 +48,10 @@ releases:
                     env:
                       - name: BACKUP_PATH
                         value: /data/backup
-                    livenessProbe:
-                      exec:
-                        command: # Log file was not updated for some time
-                        - sh
-                        - -c
-                        - >-
-                          find /tmp/streamer -mmin -3 | grep '.log'
-                      initialDelaySeconds: 350
-                      periodSeconds: 20
+                      - name: ORACLE_PASS
+                        value: "{{ .Values.oracle_pass }}"
+                      - name: PAGE_SIZE
+                        value: "2000"
                 volumes:
                   - name: liquid-streamer-volume
                     persistentVolumeClaim: 
