@@ -29,6 +29,30 @@ releases:
             resources:
               requests:
                 storage: 200Gi
+        - apiVersion: batch/v1
+          kind: CronJob
+          metadata:
+            name: clickhouse-backup
+            labels:
+              app: clickhouse-backup
+          spec:
+            schedule: "0 18 * * MON"
+            jobTemplate:
+              spec:
+                template:
+                  spec:
+                    containers:
+                     - name: clickhouse-backup
+                       image: clickhouse/clickhouse-server:24.1.2.5-alpine
+                       command:
+                         - "/bin/sh"
+                         - "-ec"
+                         - |
+                           MONDAY=$(clickhouse-client -h clickhouse-standalone -q "select toMonday(today())") 
+                           PREVIOUS_MONDAY=$(clickhouse-client -h clickhouse-standalone -q "select toMonday(today() - 7)") 
+                           clickhouse-client -h clickhouse-standalone -q "BACKUP DATABASE gladiators TO S3('https://gladiators-clickhouse-backup.s3.amazonaws.com/gladiators-$MONDAY', '{{ .Values.aws_access_key }}', '{{ .Values.aws_secret_key }}') SETTINGS base_backup = S3('https://gladiators-clickhouse-backup.s3.amazonaws.com/gladiators-$PREVIOUS_MONDAY', '{{ .Values.aws_access_key }}', '{{ .Values.aws_secret_key }}')" --send_timeout 7200 --receive_timeout 7200
+                           clickhouse-client -h clickhouse-standalone -q "BACKUP DATABASE hattrick TO S3('https://gladiators-clickhouse-backup.s3.amazonaws.com/hattrick-$MONDAY', '{{ .Values.aws_access_key }}', '{{ .Values.aws_secret_key }}') SETTINGS base_backup = S3('https://gladiators-clickhouse-backup.s3.amazonaws.com/hattrick-$PREVIOUS_MONDAY', '{{ .Values.aws_access_key }}', '{{ .Values.aws_secret_key }}')" --send_timeout 7200 --receive_timeout 7200
+                    restartPolicy: OnFailure
         - apiVersion: apps/v1
           kind: StatefulSet
           metadata: 
@@ -69,5 +93,10 @@ releases:
               app: clickhouse
             ports:
               - protocol: TCP
+                name: http
                 port: 8123
                 targetPort: 8123
+              - protocol: TCP
+                name: native
+                port: 9000
+                targetPort: 9000
