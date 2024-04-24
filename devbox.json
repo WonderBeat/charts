@@ -1,16 +1,16 @@
 {
   "packages": [
     "krew@latest",
-    "kubectl@latest",
     "kubernetes-helm@latest",
     "helmfile@latest",
     "k9s@latest",
     "python311@latest",
-    "pyinfra@latest"
+    "pyinfra@latest",
+    "kubectl@latest"
   ],
   "env": {
     "KREW_ROOT": "$PWD/.krew",
-    "PATH": "$PWD/.krew/bin:$PATH"
+    "PATH":      "$PWD/.krew/bin:$PATH"
   },
   "shell": {
     "init_hook": [
