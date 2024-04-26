@@ -1,0 +1,85 @@
+# kubectl apply -k "https://github.com/argoproj/argo-workflows/manifests/base/crds/full?ref=v3.3.9"
+repositories:
+  - name: argo
+    url: https://argoproj.github.io/argo-helm
+releases:
+  - name: argo-events
+    namespace: argo
+    chart: argo/argo-events
+    values:
+      - controller:
+          resources:
+            limits:
+              memory: 220Mi
+            requests:
+              memory: 50Mi
+      - webhook:
+          resources:
+            limits:
+              memory: 120Mi
+            requests:
+              memory: 50Mi
+      - configs:
+          jetstream:
+            versions:
+              - version: default
+                natsImage: "nats:2.10"
+                metricsExporterImage: natsio/prometheus-nats-exporter:0.15.0
+                configReloaderImage: natsio/nats-server-config-reloader:0.14.2
+                startCommand: /nats-server
+            settings:
+              maxFileStorage: 20G
+  - name: argo-workflow
+    namespace: argo
+    chart: argo/argo-workflows
+    values:
+      - workflow:
+          serviceAccount:
+            create: true
+            name: "argo-workflow"
+          rbac:
+            create: true
+      - controller:
+          workflowNamespaces:
+            - argo
+      - server:
+          resources:
+            limits:
+              memory: 320Mi
+            requests:
+              memory: 50Mi
+          authModes: ["server"]
+          ingress:
+            enabled: true
+            hosts: [ "argo.gladiators.dev" ]
+            annotations:
+              kubernetes.io/ingress.class: traefik
+
+  - name: argo-eventbus
+    namespace: argo
+    chart: main/raw
+    values:
+      - resources:
+        - apiVersion: argoproj.io/v1alpha1
+          kind: EventBus
+          metadata:
+            name: default
+          spec:
+            jetstream:
+              containerTemplate:
+                resources:
+                  limits:
+                    memory: 220Mi
+                  requests:
+                    memory: 50Mi
+              version: default
+              replicas: 3
+              persistence:
+                volumeSize: 10Gi
+              streamConfig: |
+                maxAge: 24h
+              settings: |
+                max_file_store: 1GB
+              # startArgs:
+              #   - "-D"
+
