@@ -1,0 +1,48 @@
+# kubectl apply -k "https://github.com/argoproj/argo-workflows/manifests/base/crds/full?ref=v3.3.9"
+repositories:
+  - name: dapr
+    url: https://dapr.github.io/helm-charts/
+releases:
+  - name: dapr-dashboard
+    namespace: dapr-system
+    chart: dapr/dapr-dashboard
+    values:
+      - ingress:
+          enabled: true
+          host: dapr.gladiators.dev
+          className: traefik
+      - resources:
+          limits:
+            memory: 200Mi
+          requests:
+            memory: 60Mi
+  - name: dapr
+    namespace: dapr-system
+    chart: dapr/dapr
+    values:
+      - global:
+          logAsJson: true
+      - dapr_placement:
+          resources:
+            limits:
+              memory: 200Mi
+            requests:
+              memory: 60Mi
+      - dapr_operator:
+          resources:
+            limits:
+              memory: 200Mi
+            requests:
+              memory: 60Mi
+      - dapr_sentry:
+          resources:
+            limits:
+              memory: 200Mi
+            requests:
+              memory: 60Mi
+      - dapr_sidecar_injector:
+          resources:
+            limits:
+              memory: 200Mi
+            requests:
+              memory: 60Mi
