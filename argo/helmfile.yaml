@@ -51,9 +51,8 @@ releases:
           authModes: ["server"]
           ingress:
             enabled: true
+            ingressClassName: traefik
             hosts: [ "argo.gladiators.dev" ]
-            annotations:
-              kubernetes.io/ingress.class: traefik
 
   - name: argo-eventbus
     namespace: argo

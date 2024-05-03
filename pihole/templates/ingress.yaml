@@ -3,11 +3,11 @@ kind: Ingress
 metadata:
   name: {{ include "pihole.name" . }}
   annotations:
-    kubernetes.io/ingress.class: traefik
     traefik.frontend.rule.type: AddPrefix
     traefik.http.middlewares.admin-prefix.addprefix.prefix: /admin
     traefik.ingress.kubernetes.io/router.middlewares: default-addprefix@kubernetescrd
 spec:
+  ingressClassName: traefik
   rules:
   - host: "pihole.dg"
     http:

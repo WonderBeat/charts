@@ -8,9 +8,7 @@ releases:
     historyMax: 2
     values:
       - ingress:
-          annotations:
-            kubernetes.io/ingress.class: traefik
-          className: ""
+          className: traefik
           enabled: true
           hosts:
             - host: "juicefs.dg"
