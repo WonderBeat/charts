@@ -7,7 +7,7 @@ oracle_denis = [
 ]
 
 oracle_andrey = ["o1", "o2", "o3", "o4"]
-hezner_eu = [("ks1", {"home_wg": True}), "ks2", "ks3"]
+hezner_eu = ["ks2"]
 hezner_us = ["usa1"]
 
 

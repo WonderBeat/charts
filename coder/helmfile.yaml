@@ -51,6 +51,10 @@ releases:
                   key: url
             - name: CODER_ACCESS_URL
               value: "https://coder.gladiators.dev"
+          ingress:
+            enable: true
+            className: traefik
+            host: coder.gladiators.dev
           service:
             enable: true
             type: ClusterIP
