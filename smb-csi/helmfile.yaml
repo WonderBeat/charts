@@ -1,0 +1,36 @@
+repositories:
+  - name: csi-driver-smb
+    url: https://raw.githubusercontent.com/kubernetes-csi/csi-driver-smb/master/charts
+releases:
+  - name: csi-driver-smb
+    namespace: kube-system
+    chart: csi-driver-smb/csi-driver-smb
+    values:
+      - driver.name: smb2.csi.k8s.io
+      - controller:
+          name: csi-smb2-controller
+          affinity:
+            nodeAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                - matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: In
+                    values:
+                    - xpand
+      - node:
+          affinity:
+            nodeAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                - matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: In
+                    values:
+                    - xpand
+
+      - rbac.name: smb2
+      - serviceAccount.controller: csi-smb2-controller-sa
+      - serviceAccount.node: csi-smb2-node-sa
+      - node.name: csi-smb2-node
+      - node.livenessProbe.healthPort: 39643

@@ -14,7 +14,7 @@ spec:
         pathType: Prefix
         backend:
           service:
-            name: healthcheck-eventsource-svc
+            name: trigger-backup-eventsource-svc
             port:
               number: 12000
 ---
@@ -22,17 +22,177 @@ apiVersion: argoproj.io/v1alpha1
 kind: EventSource
 metadata:
   namespace: argo
-  name: healthcheck
+  name: trigger-backup
 spec:
   service:
     ports:
       - port: 12000
   webhook:
-    # event-source can run multiple HTTP servers. Simply define a unique port to start a new HTTP server
-    example:
-      # port to run HTTP server on
+    submit:
       port: "12000"
-      # endpoint to listen to
-      endpoint: /example
-      # HTTP request method to allow. In this case, only POST requests are accepted
+      endpoint: /submit
       method: POST
+    verify:
+      port: "12000"
+      endpoint: /verify
+      method: POST
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Sensor
+metadata:
+  name: nasduck-backup
+  namespace: argo
+spec:
+  template:
+    serviceAccountName: operate-workflow-sa
+  dependencies:
+    - name: webhook
+      eventSourceName: trigger-backup
+      eventName: submit
+  triggers:
+    - template:
+        name: backup
+        argoWorkflow:
+          operation: submit
+          source:
+            resource:
+              apiVersion: argoproj.io/v1alpha1
+              kind: Workflow
+              metadata:
+                generateName: kopia-backup-
+              spec:
+                parallelism: 1
+                synchronization:
+                  mutex:
+                    name: backup
+                volumes:
+                  - name: nasduck
+                    persistentVolumeClaim:
+                      claimName: nasduck-backup-pvc
+                  - name: nasduck-remote
+                    persistentVolumeClaim:
+                      claimName: nasduck-remote
+                affinity:
+                  nodeAffinity:
+                    requiredDuringSchedulingIgnoredDuringExecution:
+                      nodeSelectorTerms:
+                      - matchExpressions:
+                        - key: kubernetes.io/hostname
+                          operator: In
+                          values:
+                            - xpand
+                arguments:
+                  parameters:
+                    - name: pwd
+                      value: invalid
+                entrypoint: kopia
+                templates:
+                - name: kopia
+                  inputs:
+                    parameters:
+                    - name: pwd
+                  container:
+                    image: kopia/kopia:20240429.0.193259
+                    resources:
+                      limits:
+                        memory: 333Mi
+                      requests:
+                        memory: 150Mi
+                    command:
+                      - sh
+                      - -c
+                      - "kopia repository connect filesystem --path /mnt/backup/ && kopia snapshot create /mnt/remote/"
+                    env:
+                      - name: KOPIA_PASSWORD
+                        value: "{{inputs.parameters.pwd}}"
+                    volumeMounts:
+                      - name: nasduck
+                        mountPath: /mnt/backup
+                      - name: nasduck-remote
+                        mountPath: /mnt/remote
+          parameters:
+            - src:
+                dependencyName: webhook
+                dataKey: body.pwd
+              dest: spec.arguments.parameters.0.value
+
+
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Sensor
+metadata:
+  name: nasduck-verify
+  namespace: argo
+spec:
+  template:
+    serviceAccountName: operate-workflow-sa
+  dependencies:
+    - name: webhook
+      eventSourceName: trigger-verify
+      eventName: verify
+  triggers:
+    - template:
+        name: verify
+        argoWorkflow:
+          operation: submit
+          source:
+            resource:
+              apiVersion: argoproj.io/v1alpha1
+              kind: Workflow
+              metadata:
+                generateName: kopia-verify-
+              spec:
+                parallelism: 1
+                synchronization:
+                  mutex:
+                    name: backup
+                volumes:
+                  - name: nasduck
+                    persistentVolumeClaim:
+                      claimName: nasduck-backup-pvc
+                  - name: nasduck-remote
+                    persistentVolumeClaim:
+                      claimName: nasduck-remote
+                affinity:
+                  nodeAffinity:
+                    requiredDuringSchedulingIgnoredDuringExecution:
+                      nodeSelectorTerms:
+                      - matchExpressions:
+                        - key: kubernetes.io/hostname
+                          operator: In
+                          values:
+                            - xpand
+                arguments:
+                  parameters:
+                    - name: pwd
+                      value: invalid
+                entrypoint: kopia
+                templates:
+                - name: kopia
+                  inputs:
+                    parameters:
+                    - name: pwd
+                  container:
+                    image: kopia/kopia:20240429.0.193259
+                    resources:
+                      limits:
+                        memory: 333Mi
+                      requests:
+                        memory: 150Mi
+                    command:
+                      - sh
+                      - -c
+                      - "kopia repository connect filesystem --path /mnt/backup/ && kopia snapshot verify --verify-files-percent 1 /mnt/remote/"
+                    env:
+                      - name: KOPIA_PASSWORD
+                        value: "{{inputs.parameters.pwd}}"
+                    volumeMounts:
+                      - name: nasduck
+                        mountPath: /mnt/backup
+                      - name: nasduck-remote
+                        mountPath: /mnt/remote
+          parameters:
+            - src:
+                dependencyName: webhook
+                dataKey: body.pwd
+              dest: spec.arguments.parameters.0.value
