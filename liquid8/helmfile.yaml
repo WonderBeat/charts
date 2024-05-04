@@ -11,6 +11,10 @@ releases:
     chart: ./liquid8
     values:
       - secret.yaml
+      - podAnnotations:
+          dapr.io/enabled: "true"
+          dapr.io/app-id: "liquid8"
+          # dapr.io/config: "liquid8"
       - env:
           - name: OTEL_SERVICE_NAME
             value: liquid8
