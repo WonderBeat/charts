@@ -48,7 +48,7 @@ spec:
               - sh
               - -c
               - >-
-                find /tmp/healthcheck -mmin -5 | grep .
+                find /tmp/healthcheck -mmin -12 | grep .
             initialDelaySeconds: 360
             periodSeconds: 30
           readinessProbe:
