@@ -3,11 +3,6 @@ repositories:
   - name: dapr
     url: https://dapr.github.io/helm-charts/
 releases:
-  - name: dapr-pubsub
-    namespace: bigdata
-    chart: main/raw
-    values:
-      - secrets.yaml
   - name: dapr-dashboard
     namespace: dapr-system
     chart: dapr/dapr-dashboard
