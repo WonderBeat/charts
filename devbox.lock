@@ -1,6 +1,54 @@
 {
   "lockfile_version": "1",
   "packages": {
+    "dapr-cli@latest": {
+      "last_modified": "2024-04-19T17:36:04-04:00",
+      "resolved": "github:NixOS/nixpkgs/92d295f588631b0db2da509f381b4fb1e74173c5#dapr-cli",
+      "source": "devbox-search",
+      "version": "1.13.0",
+      "systems": {
+        "aarch64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/36hrz4wa9y8g19b9qcl1kn0whkdi5jl5-dapr-cli-1.13.0",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/36hrz4wa9y8g19b9qcl1kn0whkdi5jl5-dapr-cli-1.13.0"
+        },
+        "aarch64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/4zdv33sshn40zypv0xcjdl10wjbs42rl-dapr-cli-1.13.0",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/4zdv33sshn40zypv0xcjdl10wjbs42rl-dapr-cli-1.13.0"
+        },
+        "x86_64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/vy43qkwyp8sh9rfnzxs7qg8jpm7zmc3n-dapr-cli-1.13.0",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/vy43qkwyp8sh9rfnzxs7qg8jpm7zmc3n-dapr-cli-1.13.0"
+        },
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/6clvnkxywvpdkbq5fm70k8wb6b0g0x9y-dapr-cli-1.13.0",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/6clvnkxywvpdkbq5fm70k8wb6b0g0x9y-dapr-cli-1.13.0"
+        }
+      }
+    },
     "helmfile@latest": {
       "last_modified": "2024-04-19T17:36:04-04:00",
       "resolved": "github:NixOS/nixpkgs/92d295f588631b0db2da509f381b4fb1e74173c5#helmfile",
