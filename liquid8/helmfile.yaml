@@ -1,39 +1,117 @@
-environments:
-  default:
-    values:
-      - secret.yaml
 releases:
-  - name: liquid8
+  - name: dapr-pubsub
+    namespace: bigdata
+    chart: main/raw
+    values:
+      - secrets-pubsub.yaml
+  - name: dapr-subscription
+    namespace: bigdata
+    chart: main/raw
+    values:
+      - resources:
+          - apiVersion: dapr.io/v2alpha1
+            kind: Subscription
+            metadata:
+              name: ready-to-execute
+            spec:
+              topic: opportunity
+              routes:
+                default: /execute
+              pubsubname: liquid-searcher
+            scopes:
+            - liquid-executor
+  - name: liquid8-executor
     namespace: bigdata
     createNamespace: true
     chart: ./liquid8
     values:
+      - podAnnotations:
+          dapr.io/enabled: "true"
+          dapr.io/app-id: "liquid-executor"
+          dapr.io/app-port: "8080"
       - secret.yaml
       - env:
-          - name: OTEL_SERVICE_NAME
-            value: liquid8
-          - name: OTEL_TRACES_EXPORTER
-            value: otlp
-          - name: OTEL_EXPORTER_OTLP_PROTOCOL
-            value: http/protobuf
-          - name: OTEL_LOGS_EXPORTER
-            value: none
-          - name: OTEL_TRACES_SAMPLER
-            value: traceidratio
-          - name: OTEL_TRACES_SAMPLER_ARG
-            value: "0.9"
-          - name: OTEL_INSTRUMENTATION_OKHTTP_ENABLED
-            value: "false"
-          - name: OTEL_METRICS_EXPORTER
-            value: none
-          - name: HOST_IP
-            valueFrom:
-              fieldRef:
-                fieldPath: status.hostIP
-          - name: OTEL_EXPORTER_OTLP_ENDPOINT
-            value: http://$(HOST_IP):4318
-
+        - name: OTEL_TRACES_EXPORTER
+          value: otlp
+        - name: OTEL_EXPORTER_OTLP_PROTOCOL
+          value: http/protobuf
+        - name: OTEL_LOGS_EXPORTER
+          value: none
+        - name: OTEL_TRACES_SAMPLER
+          value: traceidratio
+        - name: OTEL_TRACES_SAMPLER_ARG
+          value: "0.9"
+        - name: OTEL_INSTRUMENTATION_OKHTTP_ENABLED
+          value: "false"
+        - name: OTEL_METRICS_EXPORTER
+          value: none
+        - name: HOST_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: http://$(HOST_IP):4318
+        - name: OTEL_SERVICE_NAME
+          value: liquid8-executor
+        - name: entrypoint
+          value: executor
+      - persistence:
+          enabled: false
+      - resources:
+          requests:
+            memory: 200Mi
+          limits:
+            memory: 300Mi
       - config: |
+          httpNodesFile: /nodes.txt
+          historicalUpdatesBlocks: 7000
+          blockchain: binance
+          blockBuilderEnabled: true
+          trampolineDeadlineMillis: 550
+          tradingTokens:
+          - 0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c
+          - 0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56
+          - 0x55d398326f99059fF775485246999027B3197955
+          # eth
+          # - 0x2170Ed0880ac9A755fd29B2688956BD959F933F8
+          - 0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d
+  - name: liquid8-searcher
+    namespace: bigdata
+    createNamespace: true
+    chart: ./liquid8
+    values:
+      - podAnnotations:
+          dapr.io/enabled: "true"
+          dapr.io/app-id: "liquid-searcher"
+          dapr.io/app-port: "8080"
+      - secret.yaml
+      - env:
+        - name: OTEL_TRACES_EXPORTER
+          value: otlp
+        - name: OTEL_EXPORTER_OTLP_PROTOCOL
+          value: http/protobuf
+        - name: OTEL_LOGS_EXPORTER
+          value: none
+        - name: OTEL_TRACES_SAMPLER
+          value: traceidratio
+        - name: OTEL_TRACES_SAMPLER_ARG
+          value: "0.9"
+        - name: OTEL_INSTRUMENTATION_OKHTTP_ENABLED
+          value: "false"
+        - name: OTEL_METRICS_EXPORTER
+          value: none
+        - name: HOST_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: http://$(HOST_IP):4318
+        - name: entrypoint
+          value: searcher
+        - name: OTEL_SERVICE_NAME
+          value: liquid8-searcher
+      - config: |
+          mode: DAPR
           wssNodesFile: /wss-nodes.txt
           httpNodesFile: /nodes.txt
           historicalUpdatesBlocks: 7000
@@ -47,18 +125,13 @@ releases:
           # eth
           # - 0x2170Ed0880ac9A755fd29B2688956BD959F933F8
           - 0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d
-  # - name: liquid8-polygon
-  #   namespace: bigdata
-  #   chart: ./liquid8
-  #   values:
-  #     - secret.yaml
-  #     - config: |
-  #         blockchain: polygon
-  #         wssNodesFile: /wss-nodes.polygon.txt
-  #         httpNodesFile: /nodes.polygon.txt
-  #         historicalUpdatesBlocks: 300
-  #         blockBuilderEnabled: false
-  #         trampolineDeadlineMillis: 2000 # whole block
-  #         tradingTokens:
-  #           - 0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270
-  #         grossCycleIncomeThresholdInCents: 1
+
+      - affinity:
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+              - matchExpressions:
+                - key: topology.kubernetes.io/zone
+                  operator: In
+                  values:
+                  - usa
