@@ -6,6 +6,15 @@ releases:
     namespace: monitoring
     chart: open-telemetry/opentelemetry-collector
     values:
+      - affinity:
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+              - matchExpressions:
+                - key: kubernetes.io/hostname
+                  operator: NotIn
+                  values:
+                  - jonapot
       - secrets.yaml
       - image:
           repository: "otel/opentelemetry-collector-k8s"
