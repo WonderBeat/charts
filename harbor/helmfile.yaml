@@ -1,0 +1,127 @@
+repositories:
+  - name: harbor
+    url: https://helm.goharbor.io
+releases:
+  - name: harbor
+    namespace: db
+    chart: harbor/harbor
+    values:
+      - database:
+          internal:
+            affinity:
+              nodeAffinity:
+                requiredDuringSchedulingIgnoredDuringExecution:
+                  nodeSelectorTerms:
+                  - matchExpressions:
+                    - key: kubernetes.io/arch
+                      operator: In
+                      values:
+                        - amd64
+                    # - key: kubernetes.io/hostname
+                    #   operator: NotIn
+                    #   values:
+                    #     - jonapot
+            # image:
+            #   repository: chainguard/harbor-db
+            #   tag: sha256-b8b3b0e727452c0a59973cc0e7b9353d306d73a46fb751d6140dc2e15d57786c.sig
+            resources:
+              limits:
+                memory: "300Mi"
+              requests:
+                memory: "50Mi"
+
+      - portal:
+          image:
+            repository: bitnami/harbor-portal
+            tag: 2.10.2
+          resources:
+            limits:
+              memory: "300Mi"
+            requests:
+              memory: "50Mi"
+      - core:
+          affinity:
+            nodeAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                - matchExpressions:
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values:
+                      - amd64
+                  - key: kubernetes.io/hostname
+                    operator: NotIn
+                    values:
+                      - xpand
+          # image:
+          #   repository: bitnami/harbor-core
+          #   tag: 2.10.2
+          resources:
+            limits:
+              memory: "300Mi"
+            requests:
+              memory: "50Mi"
+
+      - jobservice:
+          # image:
+          #   repository: bitnami/harbor-jobservice
+          #   tag: 2.10.2
+          maxJobWorkers: 1
+          jobLoggers:
+            - stdout
+          affinity:
+            nodeAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                - matchExpressions:
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values:
+                      - amd64
+          replicas: 1
+          resources:
+            limits:
+              memory: "300Mi"
+            requests:
+              memory: "50Mi"
+      - registry:
+          affinity:
+            nodeAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                - matchExpressions:
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values:
+                      - amd64
+          controller:
+            image:
+              repository: bitnami/harbor-registryctl
+              tag: 2.10.2
+          registry:
+            # image:
+            #   repository: syseleven/harbor-registry
+            #   tag: 2.10.2
+            resources:
+              limits:
+                memory: "300Mi"
+              requests:
+                memory: "50Mi"
+      - expose:
+          tls:
+            enabled: false
+          ingress:
+            hosts:
+              core: harbor.gladiators.dev
+              className: traefik
+      - externalURL: https://harbor.gladiators.dev
+      - persistence:
+          resourcePolicy: drop
+      - trivy:
+          enabled: false
+      - redis:
+          type: external
+          external:
+            addr: redis-master.db.svc.cluster.local:6379
+      - logLevel: error
+      - secret.yaml
