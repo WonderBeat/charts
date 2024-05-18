@@ -1,0 +1,89 @@
+repositories:
+  - name: dragonfly
+    url: https://dragonflyoss.github.io/helm-charts/
+releases:
+  - name: dragonfly-headless
+    namespace: db
+    chart: main/raw
+    values:
+      - resources:
+          - apiVersion: v1
+            kind: Service
+            metadata:
+              name: scheduler
+            spec:
+              clusterIP: None
+              selector:
+                app: dragonfly
+                component: scheduler
+                release: dragonfly
+              ports:
+                - protocol: TCP
+                  port: 8002
+                  targetPort: 8002
+  - name: dragonfly
+    namespace: db
+    chart: dragonfly/dragonfly
+    values:
+      - seedPeer:
+          replicas: 2
+          persistence:
+            enable: false
+          resources:
+            limits:
+              memory: "300Mi"
+      - seedClient:
+          replicas: 1
+          resources:
+            limits:
+              memory: "300Mi"
+          persistence:
+            enable: false
+          config:
+            gc:
+              interval: 9999s
+      - manager:
+          replicas: 1
+          ingress:
+            enable: true
+            className: traefik
+            hosts:
+              - dragonfly.gladiators.dev
+          resources:
+            limits:
+              memory: "300Mi"
+      - mysql:
+          enable: true
+      - redis:
+          enable: false
+      - externalRedis:
+          addrs:
+            - redis-master.db.svc.cluster.local:6379
+          db: 5
+      - containerRuntime:
+          containerd:
+            configPathDir: /etc/rancher/k3s
+            configFileName: registries.yaml
+            enable: false
+            # injectConfigPath: true
+      - scheduler:
+          replicas: 1
+          affinity:
+            nodeAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                - matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: NotIn
+                    values:
+                    - jonapot
+                    - xpand
+                    - vm
+          resources:
+            limits:
+              memory: "300Mi"
+      - dfdaemon:
+          resources:
+            limits:
+              memory: "300Mi"
+      - secret.yaml
