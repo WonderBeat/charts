@@ -1,6 +1,54 @@
 {
   "lockfile_version": "1",
   "packages": {
+    "coder@latest": {
+      "last_modified": "2024-05-11T07:37:55Z",
+      "resolved": "github:NixOS/nixpkgs/e4e7a43a9db7e22613accfeb1005cca1b2b1ee0d#coder",
+      "source": "devbox-search",
+      "version": "2.10.2",
+      "systems": {
+        "aarch64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/r9bw6i08d5dd96a59gndm9zifgqv64jl-coder-2.10.2",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/r9bw6i08d5dd96a59gndm9zifgqv64jl-coder-2.10.2"
+        },
+        "aarch64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/x6v6y9j55dfw9m61gcj9bk47bg69r5zv-coder-2.10.2",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/x6v6y9j55dfw9m61gcj9bk47bg69r5zv-coder-2.10.2"
+        },
+        "x86_64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/8dfwyaf9b9l5jddar1xlfcf323y0152y-coder-2.10.2",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/8dfwyaf9b9l5jddar1xlfcf323y0152y-coder-2.10.2"
+        },
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/kw14dmb9skadzrbr93w28mfzcalz5hd4-coder-2.10.2",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/kw14dmb9skadzrbr93w28mfzcalz5hd4-coder-2.10.2"
+        }
+      }
+    },
     "dapr-cli@latest": {
       "last_modified": "2024-04-19T17:36:04-04:00",
       "resolved": "github:NixOS/nixpkgs/92d295f588631b0db2da509f381b4fb1e74173c5#dapr-cli",
