@@ -36,6 +36,8 @@ releases:
           # image:
           #   tag: v2.10.2
           env:
+            # - name: CODER_DERP_SERVER_ENABLE
+            #   value: "false"
             - name: CODER_PG_CONNECTION_URL
               valueFrom:
                 secretKeyRef:
@@ -53,3 +55,75 @@ releases:
           service:
             enable: true
             type: ClusterIP
+
+  - name: coder-permissions
+    namespace: coder
+    chart: main/raw
+    values:
+      - resources:
+        - apiVersion: v1
+          kind: ServiceAccount
+          metadata:
+            name: coder-user
+        - apiVersion: rbac.authorization.k8s.io/v1
+          kind: Role
+          metadata:
+            name: coder-pod-creator
+          rules:
+          - apiGroups: [""]
+            resources: ["pods", "secrets", "pods/exec", "deployments", "services", "pods/portforward"]
+            verbs: ["create", "get", "watch", "list", "delete", "update"]
+          - apiGroups: [""]
+            resources: ["pods/log"]
+            verbs: ["create", "get", "watch", "list"]
+          - apiGroups: ["apps"]
+            resources: ["deployments", "statefulsets"]
+            verbs: ["create", "get", "watch", "list", "delete", "update", "patch"]
+          - apiGroups: ["networking.k8s.io"]
+            resources: ["ingresses"]
+            verbs: ["create", "get", "watch", "list", "patch", "update"]
+
+        - apiVersion: rbac.authorization.k8s.io/v1
+          kind: RoleBinding
+          metadata:
+            name: coder-pod-creator
+          roleRef:
+            apiGroup: rbac.authorization.k8s.io
+            kind: Role
+            name: coder-pod-creator
+          subjects:
+          - kind: ServiceAccount
+            name: coder-user
+
+  # - name: coder-bigdata-permissions
+  #   namespace: bigdata-coder
+  #   createNamespace: true
+  #   chart: main/raw
+  #   values:
+  #     - resources:
+  #       - apiVersion: v1
+  #         kind: ServiceAccount
+  #         metadata:
+  #           name: coder-user
+  #       - apiVersion: rbac.authorization.k8s.io/v1
+  #         kind: Role
+  #         metadata:
+  #           name: coder-pod-creator
+  #         rules:
+  #         - apiGroups: [""]
+  #           resources: ["pods", "secrets", "pods/exec", "deployments"]
+  #           verbs: ["create", "get", "watch", "list", "delete"]
+  #         - apiGroups: [""]
+  #           resources: ["pods/log"]
+  #           verbs: ["create", "get", "watch", "list"]
+  #       - apiVersion: rbac.authorization.k8s.io/v1
+  #         kind: RoleBinding
+  #         metadata:
+  #           name: coder-pod-creator
+  #         roleRef:
+  #           apiGroup: rbac.authorization.k8s.io
+  #           kind: Role
+  #           name: coder-pod-creator
+  #         subjects:
+  #         - kind: ServiceAccount
+  #           name: coder-user
