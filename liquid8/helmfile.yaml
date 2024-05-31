@@ -85,9 +85,8 @@ releases:
           limits:
             memory: 300Mi
       - config: |
-          httpNodesFile: /nodes.txt
           historicalUpdatesBlocks: 7000
-          blockchain: binance
+          blockchain: BSC
           blockBuilderEnabled: true
           trampolineDeadlineMillis: 550
           tradingTokens:
@@ -134,10 +133,8 @@ releases:
           value: liquid8-searcher
       - config: |
           mode: DAPR
-          wssNodesFile: /wss-nodes.txt
-          httpNodesFile: /nodes.txt
           historicalUpdatesBlocks: 7000
-          blockchain: binance
+          blockchain: BSC
           blockBuilderEnabled: true
           trampolineDeadlineMillis: 550
           tradingTokens:

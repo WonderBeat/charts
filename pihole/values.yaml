@@ -23,3 +23,6 @@ config: |
   address=/nasduck.den/192.168.11.58
   address=/nasduck.synology.me/10.69.101.69
   address=/dg/10.46.43.240
+
+
+  10.0.0.0/15, 10.1.0.0/15, 10.100.0.0/15,
