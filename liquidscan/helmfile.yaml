@@ -36,6 +36,8 @@ releases:
                       value: "{{ .Values.bsc_node }}"
                     - name: REACT_APP_POLYGON_NODE
                       value: "{{ .Values.polygon_node }}"
+                    - name: REACT_APP_ETHEREUM_NODE
+                      value: "{{ .Values.ethereum_node }}"
                     - name: REACT_APP_BACKEND_URL
                       value: https://liquidscan.gladiators.dev/api
         - apiVersion: apps/v1
@@ -59,6 +61,9 @@ releases:
                 containers:
                 - name: liquid-backend
                   image: ghcr.io/the-analytics-gladiators/liquid-backend:latest
+                  env:
+                  - name: ORACLE_PASS
+                    value: "{{ .Values.oracle_pass }}"
 
         - apiVersion: v1
           kind: Service
