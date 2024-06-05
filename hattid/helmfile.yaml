@@ -1,0 +1,163 @@
+environments:
+  default:
+    values:
+      - secret.akka_loader.yaml
+      - secret.web.yaml
+releases:
+  - name: hattid-front
+    namespace: bigdata
+    chart: main/raw
+    values:
+      - resources:
+        - apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: hattid-front
+            labels:
+              app: hattid-front
+          spec:
+            replicas: 1
+            selector:
+              matchLabels:
+                app: hattid-front
+            template:
+              metadata:
+                labels:
+                  app: hattid-front
+              spec:
+                containers:
+                - name: hattid-front
+                  image: ghcr.io/blackmorse/hat-all-stats/front:latest
+        - apiVersion: v1
+          kind: Service
+          metadata:
+            name: hattid-front
+          spec:
+            selector:
+              app: hattid-front
+            ports:
+              - protocol: TCP
+                port: 3000
+                targetPort: 3000
+        - apiVersion: v1
+          kind: ConfigMap
+          metadata:
+            name: web-config
+          data: 
+            application.conf: |
+{{ .Values.web_config | indent 14 }}
+        - apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: hattid-web
+            labels:
+              app: hattid-web
+          spec:
+            replicas: 1
+            selector:
+              matchLabels:
+                app: hattid-web
+            template:
+              metadata:
+                labels:
+                  app: hattid-web
+              spec:
+                volumes:
+                  - name: config
+                    configMap:
+                      name: web-config
+                containers:
+                 - name: hattid-web
+                   image: ghcr.io/blackmorse/hat-all-stats/web:latest
+                   volumeMounts:
+                    - name: config
+                      mountPath: /config
+        - apiVersion: v1
+          kind: Service
+          metadata:
+            name: hattid-web
+          spec:
+            selector:
+              app: hattid-web
+            ports:
+              - protocol: TCP
+                port: 9000
+                targetPort: 9000
+
+        - apiVersion: networking.k8s.io/v1
+          kind: Ingress
+          metadata:
+            name: hattid
+            annotations:
+              kubernetes.io/ingress.class: traefik
+          spec:
+            rules:
+            - host: "hattid.gladiators.dev"
+              http:
+                paths:
+                - path: /
+                  pathType: Prefix
+                  backend:
+                    service:
+                      name: hattid-front
+                      port:
+                        number: 3000
+                - path: /api
+                  pathType: Prefix
+                  backend:
+                    service:
+                      name: hattid-web
+                      port:
+                        number: 9000
+
+
+        - apiVersion: v1
+          kind: ConfigMap
+          metadata:
+            name: akka-loader-config
+          data: 
+            application.conf: |
+{{ .Values.loader_config | indent 14 }}
+        - apiVersion: batch/v1
+          kind: CronJob
+          metadata:
+            name: hattid-auto-loader
+            labels:
+              app: hattid-auto-loader
+          spec: 
+            schedule: '23 * * * *'
+            concurrencyPolicy: Forbid
+            jobTemplate:
+              ttlSecondsAfterFinished: 3200
+              successfulJobsHistoryLimit: 2
+              backoffLimit: 0
+              spec:
+                template:
+                  spec:
+                    restartPolicy: Never
+                    volumes:
+                      - name: config
+                        configMap:
+                          name: akka-loader-config
+                    containers:
+                      - name: hattid-auto-loader
+                        image: ghcr.io/blackmorse/hat-all-stats/akka_loader:latest
+                        resources:
+                          limits:
+                            memory: "3G"
+                            cpu: "2"
+                        imagePullPolicy: Always
+                        env:
+                          - name: AKKA_CONFIG
+                            value: /config/application.conf
+                        volumeMounts:
+                          - name: config
+                            mountPath: /config
+                        command:
+                          - java
+                          - "-Dconfig.file=/config/application.conf"
+                          - -jar
+                          - /app/akka-loader-assembly-0.1.jar
+                          - loadScheduled
+                          - --entity
+                          - auto
