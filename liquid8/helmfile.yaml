@@ -1,32 +1,17 @@
-releases:
-  - name: dapr-pubsub-coder
-    namespace: coder
-    chart: main/raw
+environments:
+  default:
     values:
-      - secrets-pubsub.yaml
-  - name: dapr-subscription-coder
-    namespace: coder
-    chart: main/raw
-    values:
-      - resources:
-          - apiVersion: dapr.io/v2alpha1
-            kind: Subscription
-            metadata:
-              name: ready-to-execute
-            spec:
-              topic: opportunity
-              routes:
-                default: /event
-              pubsubname: liquid-searcher
-            scopes:
-            - liquid-http
+    - default.yaml
+---
 
-  - name: dapr-pubsub
+releases:
+  - name: dapr-pubsub-liquid8
     namespace: bigdata
     chart: main/raw
     values:
       - secrets-pubsub.yaml
-  - name: dapr-subscription
+
+  - name: dapr-subscription-bsc
     namespace: bigdata
     chart: main/raw
     values:
@@ -34,47 +19,29 @@ releases:
           - apiVersion: dapr.io/v2alpha1
             kind: Subscription
             metadata:
-              name: ready-to-execute
+              name: execute
             spec:
-              topic: opportunity
+              topic: opportunity-bsc
               routes:
                 default: /execute
-              pubsubname: liquid-searcher
+              pubsubname: liquid-pubsub
             scopes:
-            - liquid-executor
-  - name: liquid8-executor
+            - liquid-executor-bsc
+
+  - name: liquid8-executor-bsc
     namespace: bigdata
     createNamespace: true
     chart: ./liquid8
     values:
       - podAnnotations:
           dapr.io/enabled: "true"
-          dapr.io/app-id: "liquid-executor"
+          dapr.io/app-id: "liquid-executor-bsc"
           dapr.io/app-port: "8080"
       - secret.yaml
       - env:
-        - name: OTEL_TRACES_EXPORTER
-          value: otlp
-        - name: OTEL_EXPORTER_OTLP_PROTOCOL
-          value: http/protobuf
-        - name: OTEL_LOGS_EXPORTER
-          value: none
-        - name: OTEL_TRACES_SAMPLER
-          value: traceidratio
-        - name: OTEL_TRACES_SAMPLER_ARG
-          value: "0.9"
-        - name: OTEL_INSTRUMENTATION_OKHTTP_ENABLED
-          value: "false"
-        - name: OTEL_METRICS_EXPORTER
-          value: none
-        - name: HOST_IP
-          valueFrom:
-            fieldRef:
-              fieldPath: status.hostIP
-        - name: OTEL_EXPORTER_OTLP_ENDPOINT
-          value: http://$(HOST_IP):4318
+{{ .Values.env | toYaml | indent 8 }}
         - name: OTEL_SERVICE_NAME
-          value: liquid8-executor
+          value: liquid8-executor-bsc
         - name: entrypoint
           value: executor
       - persistence:
@@ -91,7 +58,7 @@ releases:
           canaryThresholdUsd: 0.3
           swapGasLimit: 2400000
           grossCycleIncomeThresholdInUsd: 0.001
-          mode: LOCAL
+          mode: DAPR
           tradingTokens:
           - 0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c
           - 0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56
@@ -103,41 +70,23 @@ releases:
             enabled: true
             thresholdUsd: 0.8
             feePart: 0.69
-  - name: liquid8-searcher
+
+  - name: liquid8-searcher-bsc
     namespace: bigdata
     createNamespace: true
     chart: ./liquid8
     values:
       - podAnnotations:
           dapr.io/enabled: "true"
-          dapr.io/app-id: "liquid-searcher"
+          dapr.io/app-id: "liquid-searcher-bsc"
           dapr.io/app-port: "8080"
       - secret.yaml
       - env:
-        - name: OTEL_TRACES_EXPORTER
-          value: otlp
-        - name: OTEL_EXPORTER_OTLP_PROTOCOL
-          value: http/protobuf
-        - name: OTEL_LOGS_EXPORTER
-          value: none
-        - name: OTEL_TRACES_SAMPLER
-          value: traceidratio
-        - name: OTEL_TRACES_SAMPLER_ARG
-          value: "0.9"
-        - name: OTEL_INSTRUMENTATION_OKHTTP_ENABLED
-          value: "false"
-        - name: OTEL_METRICS_EXPORTER
-          value: none
-        - name: HOST_IP
-          valueFrom:
-            fieldRef:
-              fieldPath: status.hostIP
-        - name: OTEL_EXPORTER_OTLP_ENDPOINT
-          value: http://$(HOST_IP):4318
+{{ .Values.env | toYaml | indent 8 }}
+        - name: OTEL_SERVICE_NAME
+          value: liquid8-searcher-bsc
         - name: entrypoint
           value: searcher
-        - name: OTEL_SERVICE_NAME
-          value: liquid8-searcher
       - config: |
           mode: DAPR
           historicalUpdatesBlocks: 7000
@@ -146,7 +95,6 @@ releases:
           canaryThresholdUsd: 0.3
           swapGasLimit: 2400000
           grossCycleIncomeThresholdInUsd: 0.001
-          mode: LOCAL
           tradingTokens:
           - 0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c
           - 0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56
