@@ -15,15 +15,15 @@ releases:
       - replica:
           resources:
             requests:
-              memory: 90Mi
+              memory: 200Mi
             limits:
-              memory: 300Mi
+              memory: 350Mi
       - master:
           nodeSelectors:
             dg.alwaysRunning: "true"
           resources:
             requests:
-              memory: 1000Mi
+              memory: 600Mi
             limits:
               memory: 1000Mi
           persistence:

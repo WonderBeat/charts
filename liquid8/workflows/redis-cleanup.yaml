@@ -1,0 +1,25 @@
+# kubectl apply -n argo -f redis-cleanup.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: CronWorkflow
+metadata:
+  name: redis-cleanup
+spec:
+  schedule: "0 4 * * *" # at 4:00
+  # timezone: "America/Los_Angeles"   # Default to local machine timezone
+  startingDeadlineSeconds: 0
+  concurrencyPolicy: "Replace"      # Default to "Allow"
+  successfulJobsHistoryLimit: 0     # Default 3
+  failedJobsHistoryLimit: 1         # Default 1
+  suspend: false                    # Set to "true" to suspend scheduling
+  workflowSpec:
+    serviceAccountName: argo-workflow
+    entrypoint: cleanup
+    templates:
+      - name: cleanup
+        script:
+          image: redis:7.0.15-alpine
+          command: [sh]
+          source: |
+            redis-cli -h redis-master.db.svc.cluster.local -n 4 xtrim opportunity-bsc MAXLEN = 0
+            redis-cli -h redis-master.db.svc.cluster.local -n 4 xtrim opportunity-eth MAXLEN = 0
+            redis-cli -h redis-master.db.svc.cluster.local -n 4 xtrim opportunity MAXLEN = 0
