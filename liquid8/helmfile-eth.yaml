@@ -53,6 +53,7 @@ releases:
           canaryThresholdUsd: 1
           swapGasLimit: 2400000
           grossCycleIncomeThresholdInUsd: 0.001
+          minimalNativeBalanceInUsd: 100
           tradingTokens:
           - 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2
           blockBuilder:
@@ -84,6 +85,7 @@ releases:
           canaryThresholdUsd: 1
           swapGasLimit: 2400000
           grossCycleIncomeThresholdInUsd: 0.001
+          minimalNativeBalanceInUsd: 100
           tradingTokens:
           - 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2
           blockBuilder:
