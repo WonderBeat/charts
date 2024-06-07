@@ -1,0 +1,92 @@
+environments:
+  default:
+    values:
+    - default.yaml
+---
+
+releases:
+  - name: dapr-subscription-eth
+    namespace: bigdata
+    chart: main/raw
+    values:
+      - resources:
+          - apiVersion: dapr.io/v2alpha1
+            kind: Subscription
+            metadata:
+              name: execute-eth
+            spec:
+              topic: opportunity-eth
+              routes:
+                default: /execute
+              pubsubname: liquid-pubsub
+            scopes:
+            - liquid-executor-eth
+
+  - name: liquid8-executor-eth
+    namespace: bigdata
+    createNamespace: true
+    chart: ./liquid8
+    values:
+      - podAnnotations:
+          dapr.io/enabled: "true"
+          dapr.io/app-id: "liquid-executor-eth"
+          dapr.io/app-port: "8080"
+      - secret.yaml
+      - env:
+{{ .Values.env | toYaml | indent 8 }}
+        - name: OTEL_SERVICE_NAME
+          value: liquid8-executor-eth
+        - name: entrypoint
+          value: executor
+      - persistence:
+          enabled: false
+      - resources:
+          requests:
+            memory: 200Mi
+          limits:
+            memory: 300Mi
+      - config: |
+          mode: DAPR
+          blockchain: ETH
+          historicalUpdatesBlocks: 300
+          trampolineDeadlineMillis: 1000
+          canaryThresholdUsd: 1
+          swapGasLimit: 2400000
+          grossCycleIncomeThresholdInUsd: 0.001
+          tradingTokens:
+          - 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2
+          blockBuilder:
+            enabled: true
+            thresholdUsd: 0.1
+            feePart: 0.69
+
+  - name: liquid8-searcher-eth
+    namespace: bigdata
+    createNamespace: true
+    chart: ./liquid8
+    values:
+      - podAnnotations:
+          dapr.io/enabled: "true"
+          dapr.io/app-id: "liquid-searcher-eth"
+          dapr.io/app-port: "8080"
+      - secret.yaml
+      - env:
+{{ .Values.env | toYaml | indent 8 }}
+        - name: OTEL_SERVICE_NAME
+          value: liquid8-searcher-eth
+        - name: entrypoint
+          value: searcher
+      - config: |
+          mode: DAPR
+          blockchain: ETH
+          historicalUpdatesBlocks: 300
+          trampolineDeadlineMillis: 1000
+          canaryThresholdUsd: 1
+          swapGasLimit: 2400000
+          grossCycleIncomeThresholdInUsd: 0.001
+          tradingTokens:
+          - 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2
+          blockBuilder:
+            enabled: true
+            thresholdUsd: 0.1
+            feePart: 0.69
