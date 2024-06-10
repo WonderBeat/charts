@@ -1,0 +1,38 @@
+
+repositories:
+  - name: tailzip
+    url: https://tailzip.github.io/dnscrypt-proxy/
+releases:
+  - name: dnscrypt
+    # namespace: argo
+    chart: tailzip/dnscrypt-proxy
+    values:
+      - nodeSelector:
+          "kubernetes.io/hostname": kesaram
+      - config: |
+          listen_addresses = ['0.0.0.0:5053']
+          require_dnssec = true
+          keepalive = 30
+          daemonize = false
+          cache_size = 300
+          timeout = 3000
+          [sources]
+            [sources.public-resolvers]
+              urls = ['https://raw.githubusercontent.com/DNSCrypt/dnscrypt-resolvers/master/v3/public-resolvers.md', 'https://download.dnscrypt.info/resolvers-list/v3/public-resolvers.md']
+              cache_file = 'public-resolvers.md'
+              minisign_key = 'RWQf6LRCGA9i53mlYecO4IzT51TGPpvWucNSCh1CBM0QTaLn73Y7GFO3'
+              refresh_delay = 72
+              prefix = ''
+            [sources.relays]
+              urls = ['https://raw.githubusercontent.com/DNSCrypt/dnscrypt-resolvers/master/v3/relays.md', 'https://download.dnscrypt.info/resolvers-list/v3/relays.md']
+              cache_file = 'relays.md'
+              minisign_key = 'RWQf6LRCGA9i53mlYecO4IzT51TGPpvWucNSCh1CBM0QTaLn73Y7GFO3'
+              refresh_delay = 72
+              prefix = ''
+          [broken_implementations]
+          fragments_blocked = ['cisco', 'cisco-ipv6', 'cisco-familyshield', 'cisco-familyshield-ipv6', 'cleanbrowsing-adult', 'cleanbrowsing-adult-ipv6', 'cleanbrowsing-family', 'cleanbrowsing-family-ipv6', 'cleanbrowsing-security', 'cleanbrowsing-security-ipv6']
+      - resources:
+          limits:
+            memory: 100Mi
+          requests:
+            memory: 20Mi
