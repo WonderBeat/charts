@@ -1,0 +1,15 @@
+{{- if .Values.pvc.enabled -}}
+{{- with .Values.pvc.backup }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: backup-{{ include "kopia-server.fullname" $ }}
+spec:
+  accessModes:
+  - {{ .accessModes }}
+  resources:
+    requests:
+      storage: {{ .capacity }}
+  storageClassName: {{ .class }}
+{{- end }}
+{{- end }}

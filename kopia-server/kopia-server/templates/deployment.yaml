@@ -1,0 +1,118 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "kopia-server.fullname" . }}
+  labels:
+    {{- include "kopia-server.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "kopia-server.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "kopia-server.labels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          command:
+            - sh
+            - -c
+            - |
+              kopia repository connect filesystem --path ~/repo
+              cd ~/repo
+              kopia server start \
+              --tls-cert-file ~/my.cert \
+              --tls-key-file ~/my.key \
+              --address 0.0.0.0:{{ .Values.service.port }} \
+              --server-control-username control
+
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: kopia
+              containerPort: {{ .Values.service.port }}
+              protocol: TCP
+          env:
+            - name: KOPIA_PASSWORD
+              value: {{ .Values.kopia.password }}
+            - name: KOPIA_SERVER_CONTROL_PASSWORD
+              value: {{ .Values.kopia.control.password }}
+          livenessProbe:
+            {{- toYaml .Values.livenessProbe | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.readinessProbe | nindent 12 }}
+          startupProbe:
+            {{- toYaml .Values.startupProbe | nindent 12 }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+{{- if .Values.pvc.enabled }}
+            - name: backup
+              mountPath: /root
+{{- end }}
+          {{- with .Values.volumeMounts }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      initContainers:
+        - name: create-cert
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          command:
+            - sh
+            - -c
+            - |
+              if [ ! -f ~/my.cert ]; then
+                kopia repository create filesystem --path ~/repo
+                timeout 5 kopia server start --tls-generate-cert --tls-cert-file ~/my.cert --tls-key-file ~/my.key --address 0.0.0.0:51515 --server-control-username control
+                echo "cert generated"
+              else
+                openssl x509 -in ~/my.cert -noout -fingerprint -sha256 | sed 's/://g' | cut -f 2 -d =
+              fi
+
+          env:
+            - name: KOPIA_PASSWORD
+              value: {{ .Values.kopia.password }}
+            - name: KOPIA_SERVER_CONTROL_PASSWORD
+              value: {{ .Values.kopia.control.password }}
+          volumeMounts:
+{{- if .Values.pvc.enabled }}
+            - name: backup
+              mountPath: /root
+{{ end }}
+      volumes:
+{{- if .Values.pvc.enabled }}
+        - name: backup
+          persistentVolumeClaim:
+            claimName: backup-{{ include "kopia-server.fullname" $ }}
+{{end}}
+      {{- with .Values.volumes }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

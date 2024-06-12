@@ -1,8 +1,9 @@
+
 releases:
-  - name: cloak
-    # namespace: default
+  - name: kopia-server
+    namespace: db
     # createNamespace: true
-    chart: ./cloak
+    chart: ./kopia-server
     values:
       - secret.yaml
       - affinity:
@@ -10,7 +11,7 @@ releases:
             requiredDuringSchedulingIgnoredDuringExecution:
               nodeSelectorTerms:
               - matchExpressions:
-                - key: topology.kubernetes.io/zone
-                  operator: NotIn
+                - key: kubernetes.io/hostname
+                  operator: In
                   values:
-                  - home
+                  - xpand
