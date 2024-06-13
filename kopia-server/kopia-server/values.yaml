@@ -50,9 +50,9 @@ ingress:
 
 resources:
   limits:
-    memory: 328Mi
+    memory: 528Mi
   requests:
-    memory: 100Mi
+    memory: 80Mi
 
 # livenessProbe:
 #   tcpSocket:
