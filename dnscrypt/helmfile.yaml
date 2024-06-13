@@ -1,12 +1,37 @@
-
 repositories:
   - name: tailzip
     url: https://tailzip.github.io/dnscrypt-proxy/
 releases:
+  - name: dnscrypt-service
+    chart: main/raw
+    values:
+      - resources:
+        - apiVersion: v1
+          kind: Service
+          metadata:
+            name:  dnscrypt
+          spec:
+            type: ClusterIP
+            ports:
+              - port: 53
+                targetPort: 5053
+                protocol: TCP
+                name: dns-tcp
+              - port: 53
+                targetPort: 5053
+                protocol: UDP
+                name: dns-udp
+            selector:
+              app.kubernetes.io/instance: dnscrypt
+              app.kubernetes.io/name: dnscrypt-proxy
+
   - name: dnscrypt
-    # namespace: argo
     chart: tailzip/dnscrypt-proxy
     values:
+      - serviceTCP:
+          type: ClusterIP
+      - serviceUDP:
+          type: ClusterIP
       - nodeSelector:
           "kubernetes.io/hostname": kesaram
       - config: |
@@ -14,7 +39,7 @@ releases:
           require_dnssec = true
           keepalive = 30
           daemonize = false
-          cache_size = 300
+          cache_size = 400
           timeout = 3000
           [sources]
             [sources.public-resolvers]
