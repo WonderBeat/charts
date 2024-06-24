@@ -9,7 +9,7 @@ import random
 
 
 apt.packages(
-    name="Ensure installed",
+    name="wireguard",
     packages=["wireguard"],
     _sudo=True,
 )
