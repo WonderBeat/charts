@@ -1,0 +1,8 @@
+releases:
+  - name: tailscale
+    namespace: network
+    createNamespace: true
+    chart: ./tailscale-userspace
+    values:
+      - service:
+          enabled: true
