@@ -1,0 +1,41 @@
+environments:
+  default:
+    values:
+      - secret.yaml
+
+releases:
+ - name: englishbot
+   namespace: bots
+   chart: main/raw
+   values:
+     - resources:
+        - apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: englishbot
+            labels:
+              app: englishbot
+          spec:
+            replicas: 1
+            selector:
+              matchLabels:
+                app: englishbot
+            template:
+              metadata:
+                labels:
+                  app: englishbot
+              spec:
+                imagePullSecrets:
+                  - name: ghcr-login-secret
+                containers:
+                  - name: englishbot
+                    image: ghcr.io/blackmorse/telegrambot-english/english-bot:latest
+                    env:
+                      - name: TELEGRAM_TOKEN
+                        value: "{{ .Values.bot_token }}"
+                      - name: BOT_NAME
+                        value: "EnglishBot"
+                      - name: AWS_ACCESS_KEY_ID
+                        value: "{{ .Values.aws_access_key }}"
+                      - name: AWS_SECRET_ACCESS_KEY
+                        value: "{{ .Values.aws_secret_access_key }}"
