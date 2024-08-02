@@ -6,3 +6,13 @@ releases:
     values:
       - service:
           enabled: true
+      - affinity:
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+              - matchExpressions:
+                - key: kubernetes.io/hostname
+                  operator: NotIn
+                  values:
+                  - xpand
+                  - vm

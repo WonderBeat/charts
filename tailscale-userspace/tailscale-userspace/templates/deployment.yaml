@@ -38,7 +38,7 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           command: ["/bin/sh","-c"]
           args:
-            - tailscaled --tun=userspace-networking --socks5-server=0.0.0.0:{{ .Values.service.port }}
+            - tailscaled --tun=userspace-networking --socks5-server=0.0.0.0:{{ .Values.service.port }} --outbound-http-proxy-listen=0.0.0.0:{{ .Values.service.port }}
           env:
             - name: TS_USERSPACE
               value: "1"
