@@ -1,0 +1,56 @@
+releases:
+  - name: runners-controller
+    namespace: arc-systems
+    chart: oci://ghcr.io/actions/actions-runner-controller-charts/gha-runner-scale-set-controller
+    version: 0.9.3 
+  - name: arm64-runner-set
+    namespace: arc-runners
+    chart: oci://ghcr.io/actions/actions-runner-controller-charts/gha-runner-scale-set 
+    version: 0.9.3
+    values:
+      - githubConfigUrl: "https://github.com/The-Analytics-Gladiators/liquid8"
+        githubConfigSecret: pre-defined-secret
+        template:
+          spec:
+            containers:
+              - name: runner
+                image: ghcr.io/actions/actions-runner:latest
+                command: ["/home/runner/run.sh"]
+            affinity:
+              nodeAffinity:
+                requiredDuringSchedulingIgnoredDuringExecution:
+                  nodeSelectorTerms:
+                  - matchExpressions:
+                    - key: kubernetes.io/arch
+                      operator: In
+                      values:
+                      - arm64
+        controllerServiceAccount:
+          namespace: arc-system
+          name: test-arc-gha-runner-scale-set-controller
+
+  - name: amd64-runner-set
+    namespace: arc-runners
+    chart: oci://ghcr.io/actions/actions-runner-controller-charts/gha-runner-scale-set 
+    version: 0.9.3
+    values:
+      - githubConfigUrl: "https://github.com/The-Analytics-Gladiators/liquid8"
+        githubConfigSecret: pre-defined-secret
+        template:
+          spec:
+            containers:
+              - name: runner
+                image: ghcr.io/actions/actions-runner:latest
+                command: ["/home/runner/run.sh"]
+            affinity:
+              nodeAffinity:
+                requiredDuringSchedulingIgnoredDuringExecution:
+                  nodeSelectorTerms:
+                  - matchExpressions:
+                    - key: kubernetes.io/arch
+                      operator: In
+                      values:
+                      - amd64
+        controllerServiceAccount:
+          namespace: arc-system
+          name: test-arc-gha-runner-scale-set-controller
