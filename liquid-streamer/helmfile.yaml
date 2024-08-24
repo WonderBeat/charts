@@ -9,18 +9,6 @@ releases:
     chart: main/raw
     values:
       - resources:
-        - apiVersion: v1
-          kind: PersistentVolumeClaim
-          metadata:
-            name: liquid-streamer-pvc
-            namespace: "bigdata"
-          spec:
-            accessModes:
-              - ReadWriteMany
-            resources:
-              requests:
-                storage: 5Gi
-            storageClassName: seaweedfs-storage
         - apiVersion: apps/v1
           kind: Deployment
           metadata:
@@ -42,20 +30,20 @@ releases:
                 containers:
                   - name: liquid-streamer
                     image: ghcr.io/the-analytics-gladiators/liquid-streamer:latest
-                    volumeMounts:
-                      - name: liquid-streamer-volume
-                        mountPath: /data/backup
                     env:
-                      - name: BACKUP_PATH
-                        value: /data/backup
                       - name: ORACLE_PASS
                         value: "{{ .Values.oracle_pass }}"
                       - name: PAGE_SIZE
-                        value: "2000"
-                volumes:
-                  - name: liquid-streamer-volume
-                    persistentVolumeClaim: 
-                      claimName: liquid-streamer-pvc
+                        value: "5000"
+                    livenessProbe:
+                      exec:
+                        command: # Healthcheck file was not updated for some time
+                        - sh
+                        - -c
+                        - >-
+                          find /tmp/healthcheck -mmin -5 | grep .
+                      initialDelaySeconds: 360
+                      periodSeconds: 30
         - apiVersion: v1
           kind: Service
           metadata:
