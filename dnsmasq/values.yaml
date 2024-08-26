@@ -82,7 +82,7 @@ config: |
   server=10.46.209.63
   # server=dnscrypt-dnscrypt-proxy-udp.default.svc.cluster.local#53
   server=/stage.san/127.0.0.53#53
-  server=/production.san/10.69.101.1#53
+  server=/production.san/10.88.101.2#53
   server=/internal.san/10.69.101.1#53
   server=/.dg/10.46.0.10#53
   server=/k.dg/10.46.0.10#53
@@ -104,13 +104,6 @@ config: |
   address=/router.den/192.168.11.1
   address=/nasduck.den/192.168.11.58
   address=/nasduck.synology.me/10.69.101.69
-  address=/nifi-hz.stage.san/116.202.164.210
-  address=/nifi-hz.prod.san/142.132.203.207
-  #address=/nasduck.synology.me/192.168.11.58
-  address=/zeppelin.flink.stage.san/144.76.144.139
-  # address=/dg/10.69.101.13
-  #address=/.stage.san/10.0.83.201
-  #address=/double-click.net/127.0.0.1
 
   # --address (and --server) work with IPv6 addresses too.
   #address=/www.thekelleys.org.uk/fe80::20d:60ff:fe36:f83
