@@ -44,6 +44,10 @@ if wg_config_attrs:
         "grep -E '^Address\s?=\s?.+$' /etc/wireguard/wg0.conf | rev | xargs | cut -d '=' -f1 | rev | xargs",
         _sudo=True,
     )
+    # wg_address = wg_address.replace("10.77", "10.69")
+    # print(f"wg_address {wg_address}")
+    # if wg_address.startswith("10.77"):
+    #     print("Err")
 else:
     logger.warn("Bootstrapping new peer %s" % hostname)
     wg_private_key = host.get_fact(
@@ -83,8 +87,8 @@ newconf = files.template(
 server.systemd.service(
     name="Restart wireguard",
     service="wg-quick@wg0.service",
-    running=True,
+    running=False,
     restarted=newconf.changed,
-    enabled=True,
+    enabled=False,
     _sudo=True,
 )
