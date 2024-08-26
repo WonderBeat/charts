@@ -1,0 +1,19 @@
+{{- $root := . -}}
+{{- range .Values.nodes }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $root.Release.Name }}-{{ .name }}
+data:
+  config: |
+{{ mergeOverwrite $root.Values.common.client.config .config | toYaml | indent 4 }}
+{{- end }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-ca-crt
+data:
+  ca.crt: |
+{{ .Values.ca.public | indent 4 }}

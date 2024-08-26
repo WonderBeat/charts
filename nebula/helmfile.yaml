@@ -1,0 +1,94 @@
+releases:
+  - name: nebula-lighthouse
+    chart: ./nebula-lighthouse
+    namespace: network
+    values:
+      - values-lighthouse.gotmpl
+      - affinity:
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+              - matchExpressions:
+                - key: kubernetes.io/hostname
+                  operator: In
+                  values:
+                    # - k8s-2
+                    - kesaram
+                    # - jonapot
+                    # - k8s-usa-1
+  - name: nebula
+    chart: ./nebula
+    namespace: network
+
+    values:
+      - values-client.gotmpl
+      # - image: busybox
+      # - tag: latest
+      # - command:
+      #   - sleep
+      #   - 20h
+      # - args: {}
+
+      - common:
+          client:
+            config:
+              static_host_map:
+                # '10.88.101.1': ['135.181.155.159:32243']
+                '10.88.101.1': ['193.123.56.221:32243'] # kesaram
+                #,'5.161.98.176:32243']
+              pki:
+                ca: /etc/nebula/ca.crt
+                cert: /etc/nebula/node.crt
+                key: /etc/nebula/node.key
+              lighthouse:
+                am_lighthouse: false
+                hosts:
+                  - '10.88.101.1'
+                local_allow_list:
+                  interfaces:
+                    'docker.*': false
+                    'awg.*': false
+                    'wg.*': false
+                    'veth.*': false
+                    'tailscal.*': false
+                    'cni.*': false
+                    'flannel.*': false
+                    'tun.*': false
+                remote_allow_list:
+                  '0.0.0.0/0': true
+              listen:
+                host: 0.0.0.0
+                port: 6969
+              punchy:
+                punch: true
+              tun:
+                disabled: false
+                dev: nebula
+                drop_local_broadcast: false
+                drop_multicast: false
+                tx_queue: 1000
+                mtu: 1300
+              logging:
+                level: info
+                format: text
+              firewall:
+                conntrack:
+                  tcp_timeout: 12m
+                  udp_timeout: 3m
+                  default_timeout: 10m
+                  max_connections: 100000
+                outbound:
+                  - port: any
+                    proto: any
+                    host: any
+                    # group: k8s
+                inbound:
+                  - port: any
+                    proto: any
+                    host: any
+                    # groups:
+                    #   - k8s
+                    #   - vpn
+                  # - port: any
+                  #   proto: icmp
+                  #   host: any

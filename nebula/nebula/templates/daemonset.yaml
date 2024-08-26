@@ -1,0 +1,69 @@
+{{- $root := . -}}
+{{- range .Values.nodes }}
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ $root.Release.Name }}-{{ .name }}
+spec:
+  updateStrategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app: {{ $root.Release.Name }}-{{ .name }}
+  template:
+    metadata:
+      labels:
+        app: {{ $root.Release.Name }}-{{ .name }}
+    spec:
+      hostNetwork: true
+      nodeSelector:
+        kubernetes.io/hostname: {{ .name }}
+      tolerations:
+        - operator: Exists
+          effect: NoSchedule
+      containers:
+        - name: nebula
+          {{- with $root.Values.command }}
+          command:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with $root.Values.args }}
+          args:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          image: "{{ default "henryzhangsta/nebula" $root.Values.image }}:{{ default "latest" $root.Values.tag }}"
+          securityContext:
+            capabilities:
+              add:
+                - NET_ADMIN
+          volumeMounts:
+            - mountPath: /etc/nebula
+              name: nebula
+            - mountPath: /dev
+              name: devices
+      volumes:
+        - name: devices
+          hostPath:
+            path: /dev
+        - name: nebula
+          projected:
+            sources:
+              - configMap:
+                  name: {{ $root.Release.Name }}-{{ .name }}
+                  items:
+                    - key: config
+                      path: config.yaml
+              - configMap:
+                  name: {{ $root.Release.Name }}-ca-crt
+                  items:
+                    - key: ca.crt
+                      path: ca.crt
+              - secret:
+                  name: {{ $root.Release.Name }}-{{ .name }}
+                  items:
+                    - key: node.crt
+                      path: node.crt
+                    - key: node.key
+                      path: node.key
+{{- end }}

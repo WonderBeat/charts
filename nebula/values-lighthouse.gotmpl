@@ -1,0 +1,56 @@
+secrets:
+    ca.crt: |
+{{ readFile "secretdir/ca.crt" | indent 5 }}
+
+    host.crt: |
+{{ readFile "secretdir/lighthouse.crt" | indent 5 }}
+
+    host.key: |
+{{ readFile "secretdir/lighthouse.key" | indent 5 }}
+
+    ssh.key: |
+{{ readFile "secretdir/ssh_host_ed25519_key" | indent 5 }}
+
+    config.yml: |
+        pki:
+          ca: /config/ca.crt
+          cert: /config/host.crt
+          key: /config/host.key
+        static_host_map:
+
+        lighthouse:
+            am_lighthouse: true
+            local_allow_list:
+                interfaces:
+                    'docker.*': false
+                    'awg.*': false
+                    'wg.*': false
+                    'veth.*': false
+                    'tailscal.*': false
+                    'cni.*': false
+                    'flannel.*': false
+                    'tun.*': false
+        listen:
+            host: 0.0.0.0
+            port: 32243
+        punchy:
+            punch: true
+        tun:
+          disabled: true
+        logging:
+            level: warn
+            format: text
+        sshd:
+            enabled: true
+            listen: 0.0.0.0:2222
+            host_key: /config/ssh.key
+            authorized_users:
+                - user: gato
+                  keys:
+                    - 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIC1SQXJmCm9uvfnM+eLfS4EJrDd0rvpKAmsrYrU4lK3x gato'
+        firewall:
+            conntrack:
+                tcp_timeout: 120h
+                udp_timeout: 3m
+                default_timeout: 10m
+                max_connections: 100000

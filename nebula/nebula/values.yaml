@@ -1,0 +1,21 @@
+
+image: nebulaoss/nebula
+tag: "1.9.3"
+
+args:
+  - "--config"
+  - "/etc/nebula/config.yaml"
+
+
+
+nodes:
+#  - name: << hostname >>
+#    lighthouse: false
+#    public: |
+#      -----BEGIN NEBULA CERTIFICATE-----
+#      << PUBLIC KEY >>
+#      -----END NEBULA CERTIFICATE-----
+#    private: |
+#      -----BEGIN NEBULA X25519 PRIVATE KEY-----
+#      << PRIVATE KEY >>
+#      -----END NEBULA X25519 PRIVATE KEY-----
