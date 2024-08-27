@@ -14,6 +14,5 @@ config: |
   server=/production.san/10.88.101.2#55
   server=/internal.san/10.88.101.2#55
   server=/cluster.local/10.88.101.2#55
-  address=/nasduck.io/10.69.101.69
   address=/router.io/192.168.11.1
-  address=/nasduck.synology.me/10.69.101.69
+  address=/nasduck.synology.me/10.88.101.13
