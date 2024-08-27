@@ -7,7 +7,8 @@ metadata:
   name: {{ $root.Release.Name }}-{{ .name }}
 data:
   config: |
-{{ mergeOverwrite $root.Values.common.client.config .config | toYaml | indent 4 }}
+{{- $rootConf := deepCopy $root.Values.common.client.config }}
+{{ mergeOverwrite $rootConf .config | toYaml | indent 4 }}
 {{- end }}
 ---
 apiVersion: v1
