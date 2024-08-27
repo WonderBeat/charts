@@ -35,9 +35,9 @@ nodes:
 
   - name: k8s-2
     public: |
-{{ readFile "secretdir/jonapot.crt" | indent 5 }}
+{{ readFile "secretdir/k8s-2.crt" | indent 5 }}
     private: |
-{{ readFile "secretdir/jonapot.key" | indent 5 }}
+{{ readFile "secretdir/k8s-2.key" | indent 5 }}
     config: {}
 
   - name: k8s-usa-1
@@ -72,7 +72,6 @@ nodes:
 {{ readFile "secretdir/oracle3.crt" | indent 5 }}
     private: |
 {{ readFile "secretdir/oracle3.key" | indent 5 }}
-
     config:
       lighthouse:
         advertise_addrs:
@@ -85,6 +84,8 @@ nodes:
 {{ readFile "secretdir/xpand.key" | indent 5 }}
     config:
       tun:
+        drop_local_broadcast: false
+        drop_multicast: false
         unsafe_routes:
           - route: 8.34.208.0/20
             via: 10.88.101.2
