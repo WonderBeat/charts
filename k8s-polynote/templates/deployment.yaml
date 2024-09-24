@@ -24,8 +24,6 @@ spec:
         app.kubernetes.io/managed-by: {{ .Release.Service }}
     spec:
       serviceAccountName: {{ include "polynote.fullname" . }}
-      imagePullSecrets:
-          - name: ghcr-login-secret
       nodeSelector:
         kubernetes.io/arch: amd64
       securityContext:

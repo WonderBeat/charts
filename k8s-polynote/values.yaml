@@ -2,8 +2,6 @@ image:
   repository: ghcr.io/wonderbeat/charts
   tag: polynote-spark
   pullPolicy: Always
-  imagePullSecret:
-    - name: ghcr-login-secret
 
 nameOverride: ""
 fullnameOverride: ""

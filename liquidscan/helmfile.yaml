@@ -26,8 +26,6 @@ releases:
                 labels:
                   app: liquidscan
               spec:
-                imagePullSecrets:
-                  - name: ghcr-login-secret
                 containers:
                 - name: liquidscan
                   image: ghcr.io/the-analytics-gladiators/liquidscan:latest
@@ -56,8 +54,6 @@ releases:
                 labels:
                   app: liquid-backend
               spec:
-                imagePullSecrets:
-                  - name: ghcr-login-secret
                 containers:
                 - name: liquid-backend
                   image: ghcr.io/the-analytics-gladiators/liquid-backend:latest
