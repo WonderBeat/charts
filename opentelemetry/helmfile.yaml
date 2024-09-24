@@ -19,6 +19,7 @@ releases:
       - image:
           repository: "otel/opentelemetry-collector-k8s"
       - mode: daemonset
+      - hostNetwork: true
       - useGOMEMLIMIT: true
       - resources:
           requests:
@@ -37,7 +38,7 @@ releases:
           kubernetesAttributes:
             enabled: true
           kubeletMetrics:
-            enabled: true
+            enabled: false
           clusterMetrics:
             enabled: false
       - config:
