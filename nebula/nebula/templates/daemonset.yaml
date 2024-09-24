@@ -55,6 +55,11 @@ spec:
                     - key: config
                       path: config.yaml
               - configMap:
+                  name: {{ $root.Release.Name }}-ssh
+                  items:
+                    - key: ssh.key
+                      path: ssh.key
+              - configMap:
                   name: {{ $root.Release.Name }}-ca-crt
                   items:
                     - key: ca.crt

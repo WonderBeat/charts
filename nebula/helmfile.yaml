@@ -1,21 +1,22 @@
 releases:
-  - name: nebula-lighthouse
-    chart: ./nebula-lighthouse
-    namespace: network
-    values:
-      - values-lighthouse.gotmpl
-      - affinity:
-          nodeAffinity:
-            requiredDuringSchedulingIgnoredDuringExecution:
-              nodeSelectorTerms:
-              - matchExpressions:
-                - key: kubernetes.io/hostname
-                  operator: In
-                  values:
-                    # - k8s-2
-                    - kesaram
-                    # - jonapot
-                    # - k8s-usa-1
+#   - name: nebula-lighthouse
+#     chart: ./nebula-lighthouse
+#     namespace: network
+#     values:
+#       - replicaCount: 1
+#       - values-lighthouse.gotmpl
+#       - affinity:
+#           nodeAffinity:
+#             requiredDuringSchedulingIgnoredDuringExecution:
+#               nodeSelectorTerms:
+#               - matchExpressions:
+#                 - key: kubernetes.io/hostname
+#                   operator: In
+#                   values:
+#                     # - k8s-2
+#                     - kesaram
+#                     - jonapot
+#                     # - k8s-usa-1
   - name: nebula
     chart: ./nebula
     namespace: network
@@ -33,7 +34,10 @@ releases:
           client:
             config:
               static_host_map:
-                '10.88.101.1': ['193.123.56.221:32243'] # kesaram
+                '10.88.101.1':
+                  - '193.123.56.221:6969' # kesaram
+                '10.88.101.5':
+                  - '158.101.197.223:32243' # jonapot
               pki:
                 ca: /etc/nebula/ca.crt
                 cert: /etc/nebula/node.crt
@@ -52,8 +56,6 @@ releases:
                     'cni.*': false
                     'flannel.*': false
                     'tun.*': false
-                remote_allow_list:
-                  '0.0.0.0/0': true
               listen:
                 host: 0.0.0.0
                 port: 6969
@@ -65,16 +67,19 @@ releases:
                 drop_local_broadcast: true
                 drop_multicast: true
                 tx_queue: 1000
-                mtu: 1380
+                mtu: 1420
+                # routes:
+                #   - mtu: 8000
+                #     route: 10.98.0.0/16
               logging:
                 level: info
                 format: text
               firewall:
                 conntrack:
-                  tcp_timeout: 12m
+                  tcp_timeout: 10m
                   udp_timeout: 3m
                   default_timeout: 10m
-                  max_connections: 100000
+                  max_connections: 1000
                 outbound:
                   - port: any
                     proto: any

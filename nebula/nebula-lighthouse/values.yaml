@@ -55,9 +55,9 @@ service:
 
 resources:
   limits:
-    memory: 228Mi
+    memory: 128Mi
   requests:
-    memory: 80Mi
+    memory: 30Mi
 
 livenessProbe: {}
   # httpGet:
