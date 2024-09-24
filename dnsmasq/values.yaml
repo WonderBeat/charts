@@ -82,7 +82,7 @@ config: |
   server=10.46.209.63
   # server=dnscrypt-dnscrypt-proxy-udp.default.svc.cluster.local#53
   server=/stage.san/127.0.0.53#53
-  server=/production.san/10.88.101.2#53
+  server=/production.san/10.88.101.1#53
   server=/internal.san/10.69.101.1#53
   server=/.dg/10.46.0.10#53
   server=/k.dg/10.46.0.10#53
@@ -97,7 +97,7 @@ config: |
   # Add domains which you want to force to an IP address here.
   # The example below send any host in double-click.net to a local
   # web-server.
-  address=/nasduck.io/10.69.101.69
+  address=/nasduck.io/10.88.101.12
   address=/router.io/192.168.11.1
   address=/oracle.io/150.230.21.34
   address=/server.io/193.178.169.181
