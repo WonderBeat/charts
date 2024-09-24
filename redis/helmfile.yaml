@@ -15,9 +15,9 @@ releases:
       - replica:
           resources:
             requests:
-              memory: 200Mi
+              memory: 300Mi
             limits:
-              memory: 350Mi
+              memory: 400Mi
       - master:
           nodeSelectors:
             dg.alwaysRunning: "true"
@@ -25,12 +25,15 @@ releases:
             requests:
               memory: 600Mi
             limits:
-              memory: 1000Mi
+              memory: 700Mi
           persistence:
             existingClaim: redis-data-redis-master-0
       - replica:
           replicaCount: 2
+          configuration: |
+            maxmemory 300mb
       - master:
           configuration: |
             appendfsync everysec
+            maxmemory 600mb
             tcp-keepalive 0
