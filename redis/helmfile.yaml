@@ -13,6 +13,9 @@ releases:
           enabled: false
           password: password
       - replica:
+          readinessProbe:
+            initialDelaySeconds: 180
+            periodSeconds: 60
           resources:
             requests:
               memory: 300Mi
@@ -29,9 +32,9 @@ releases:
           persistence:
             existingClaim: redis-data-redis-master-0
       - replica:
-          replicaCount: 2
+          replicaCount: 0
           configuration: |
-            maxmemory 300mb
+            maxmemory 280mb
       - master:
           configuration: |
             appendfsync everysec
