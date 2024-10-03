@@ -145,7 +145,6 @@ releases:
                         resources:
                           limits:
                             memory: "3G"
-                            cpu: "2"
                         imagePullPolicy: Always
                         env:
                           - name: AKKA_CONFIG
