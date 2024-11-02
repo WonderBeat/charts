@@ -1,0 +1,105 @@
+environments:
+  default:
+    values:
+      - secret.listener.yaml
+releases:
+  - name: tondexer-listener
+    namespace: ton
+    chart: main/raw
+    values:
+      - resources:
+        - apiVersion: v1
+          kind: ConfigMap
+          metadata:
+            name: listener-config
+          data: 
+            config.yaml: |
+{{ .Values.listener_config | indent 14 }}
+        - apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: tondexer-listener
+            labels:
+              app: tondexer-listener
+          spec:
+            replicas: 1
+            selector:
+              matchLabels:
+                app: tondexer-listener
+            template:
+              metadata:
+                labels:
+                  app: tondexer-listener
+              spec:
+                volumes:
+                  - name: config
+                    configMap:
+                      name: listener-config
+                containers:
+                  - name: tondexer-listener
+                    image: ghcr.io/the-analytics-gladiators/tondexer/tondexer-listener:latest
+                    args:
+                      - /config/config.yaml
+                    volumeMounts:
+                      - name: config
+                        mountPath: /config
+
+        - apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: tondexer-web
+            labels:
+              app: tondexer-web
+          spec:
+            replicas: 1
+            selector:
+              matchLabels:
+                app: tondexer-web
+            template:
+              metadata:
+                labels:
+                  app: tondexer-web
+              spec:
+                volumes:
+                  - name: config
+                    configMap:
+                      name: listener-config
+                containers:
+                  - name: tondexer-web
+                    image: ghcr.io/the-analytics-gladiators/tondexer/tondexer-web:latest
+                    args:
+                      - /config/config.yaml
+                    volumeMounts:
+                      - name: config
+                        mountPath: /config
+
+        - apiVersion: v1
+          kind: Service
+          metadata:
+            name: tondexer-web
+          spec:
+            selector:
+              app: tondexer-web
+            ports:
+              - protocol: TCP
+                port: 8088
+                targetPort: 8088
+
+        - apiVersion: networking.k8s.io/v1
+          kind: Ingress
+          metadata:
+            name: tondexer
+            annotations:
+              kubernetes.io/ingress.class: traefik
+          spec:
+            rules:
+            - host: "tondexer.gladiators.dev"
+              http:
+                paths:
+                - path: /api
+                  pathType: Prefix
+                  backend:
+                    service:
+                      name: tondexer-web
+                      port:
+                        number: 8088
