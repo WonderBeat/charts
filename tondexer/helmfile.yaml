@@ -31,6 +31,19 @@ releases:
                 labels:
                   app: tondexer-listener
               spec:
+                affinity:
+                  nodeAffinity:
+                    requiredDuringSchedulingIgnoredDuringExecution:
+                      nodeSelectorTerms:
+                        - matchExpressions:
+                            - key: kubernetes.io/hostname
+                              operator: NotIn
+                              values:
+                                - xpand
+                tolerations:
+                  - key: "kubernetes.io/hostname"
+                    operator: "Exists"
+                    effect: "NoSchedule"
                 volumes:
                   - name: config
                     configMap:
@@ -96,6 +109,13 @@ releases:
             - host: "tondexer.gladiators.dev"
               http:
                 paths:
+                - path: /
+                  pathType: Prefix
+                  backend:
+                    service:
+                      name: tondexer-dashboard
+                      port:
+                        number: 8080
                 - path: /api
                   pathType: Prefix
                   backend:
@@ -103,3 +123,33 @@ releases:
                       name: tondexer-web
                       port:
                         number: 8088
+        - apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: tondexer-dashboard
+            labels:
+              app: tondexer-dashboard
+          spec:
+            replicas: 1
+            selector:
+              matchLabels:
+                app: tondexer-dashboard
+            template:
+              metadata:
+                labels:
+                  app: tondexer-dashboard
+              spec:
+                containers:
+                - name: hattid-front
+                  image: ghcr.io/the-analytics-gladiators/tondexer-dashboard/tondexer-dashboard:latest
+        - apiVersion: v1
+          kind: Service
+          metadata:
+            name: tondexer-dashboard
+          spec:
+            selector:
+              app: tondexer-dashboard
+            ports:
+              - protocol: TCP
+                port: 8080
+                targetPort: 8080
