@@ -6,7 +6,6 @@ resources:
   limits:
     memory: 100Mi
   requests:
-    cpu: 10m
     memory: 50Mi
 
 config: |
