@@ -445,6 +445,54 @@
           "store_path": "/nix/store/6b1fqdwb3g56j5pazv8zkx9qd0mv3wiz-python3-3.11.9"
         }
       }
+    },
+    "wakeonlan@latest": {
+      "last_modified": "2024-10-13T23:44:06Z",
+      "resolved": "github:NixOS/nixpkgs/d4f247e89f6e10120f911e2e2d2254a050d0f732#wakeonlan",
+      "source": "devbox-search",
+      "version": "0.42",
+      "systems": {
+        "aarch64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/3vmmjnk9s1y3vb8c7yxsby6z22p2cwbp-perl5.40.0-wakeonlan-0.42",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/3vmmjnk9s1y3vb8c7yxsby6z22p2cwbp-perl5.40.0-wakeonlan-0.42"
+        },
+        "aarch64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/5sffalv63v3q362dk1zys6ph0mwkdg8k-perl5.40.0-wakeonlan-0.42",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/5sffalv63v3q362dk1zys6ph0mwkdg8k-perl5.40.0-wakeonlan-0.42"
+        },
+        "x86_64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/sfqhw15iy5jwhfhbskj16pb727x7j0bj-perl5.40.0-wakeonlan-0.42",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/sfqhw15iy5jwhfhbskj16pb727x7j0bj-perl5.40.0-wakeonlan-0.42"
+        },
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/9smhnl8x9zlbj2mj4pvskf2p3j26mihg-perl5.40.0-wakeonlan-0.42",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/9smhnl8x9zlbj2mj4pvskf2p3j26mihg-perl5.40.0-wakeonlan-0.42"
+        }
+      }
     }
   }
 }

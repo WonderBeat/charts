@@ -7,7 +7,8 @@
     "python311@latest",
     "pyinfra@latest",
     "kubectl@latest",
-    "dapr-cli@latest"
+    "dapr-cli@latest",
+    "wakeonlan@latest"
   ],
   "env": {
     "KREW_ROOT": "$PWD/.krew",
