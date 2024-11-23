@@ -73,6 +73,15 @@ releases:
                 labels:
                   app: tondexer-web
               spec:
+                affinity:
+                  nodeAffinity:
+                    requiredDuringSchedulingIgnoredDuringExecution:
+                      nodeSelectorTerms:
+                        - matchExpressions:
+                            - key: kubernetes.io/hostname
+                              operator: NotIn
+                              values:
+                                - xpand
                 volumes:
                   - name: config
                     configMap:
