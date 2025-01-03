@@ -2,6 +2,7 @@ environments:
   default:
     values:
       - secret.users.yaml
+---
 releases:
   - name: clickhouse-standalone
     namespace: db
@@ -77,6 +78,9 @@ releases:
                         mountPath: /var/lib/clickhouse
                       - name: users-config
                         mountPath: /etc/clickhouse-server/users.d
+                    resources:
+                      limits:
+                        memory: "3G"
                 volumes:
                   - name: users-config
                     configMap:
