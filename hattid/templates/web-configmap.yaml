@@ -1,0 +1,62 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-web-config
+data:
+  application.conf: |
+    play.http.secret.key = "{{ .Values.websecrets.play.key }}"
+    play.i18n.langs = [ "en", "de", "it", "ru", "es", "hr" ]
+
+    play.filters.enabled += play.filters.hosts.AllowedHostsFilter
+
+    play.filters.enabled += "play.filters.cors.CORSFilter"
+    play.filters.cors.pathPrefixes += "/api"
+    play.filters.cors.allowedHttpMethods = ["GET", "POST"]
+
+    play.filters.hosts.routeModifiers.whiteList = []
+    play.filters.hosts.routeModifiers.blackList = []
+    play.filters.hosts.allowed = [ "." ]
+    play.http.filters=controllers.Filters
+
+
+    hattrick {
+      customerKey = "{{ .Values.hattrick_secrets.customerKey }}"
+      customerSecret = "{{ .Values.hattrick_secrets.customerSecret }}"
+      accessToken = "{{ .Values.hattrick_secrets.accessToken }}"
+      accessTokenSecret = "{{ .Values.hattrick_secrets.accessTokenSecret }}"
+
+      defaultLeagueId = 35
+      currentSeason = 74
+    }
+
+    telegram {
+      botToken = "{{ .Values.telegram.botToken }}"
+      chatId = {{ .Values.telegram.chatId }}
+    }
+
+
+    play.http.errorHandler = "handlers.HattidErrorHandler"
+
+    db.default.driver = ru.yandex.clickhouse.ClickHouseDriver
+    db.default.url = "{{ .Values.web.dbUrl }}"
+    db.default.logStatements=true
+
+    fixedConnectionPool = 20
+
+    database.clickhouse {
+      executor = "thread-pool-executor"
+      throughput = 1
+      thread-pool-executor {
+        fixed-pool-size = ${fixedConnectionPool}
+      }
+    }
+
+    play.cache.dispatcher = "contexts.blockingCacheDispatcher"
+
+    contexts {
+      blockingCacheDispatcher {
+        fork-join-executor {
+          parallelism-factor = 3.0
+        }
+      }
+    }

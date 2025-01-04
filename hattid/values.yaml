@@ -1,0 +1,52 @@
+replicaCount: 1
+
+web:
+  image:
+    repository: ghcr.io/blackmorse/hat-all-stats/web
+    tag: "latest"
+  service:
+    port: 9000
+  dbUrl: "jdbc:clickhouse://clickhouse-standalone.db.svc:8123"
+
+loader:
+  image:
+    repository: ghcr.io/blackmorse/hat-all-stats/akka_loader
+    tag: latest
+  resources:
+    limits:
+      memory: "3G"
+  schedule: "44 * * * *"
+  clickhouse:
+    host: clickhouse-standalone.db.svc
+    port: 8123
+    user: default
+    database: hattrick
+
+front:
+  image:
+    repository: ghcr.io/blackmorse/hat-all-stats/front
+    tag: latest
+  service:
+    port: 3000
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+ingress:
+  enabled: true
+  # className: ""
+  annotations:
+    kubernetes.io/ingress.class: traefik
+  hosts:
+    - host: hattid.gladiators.dev
+      paths:
+        - path: /
+          pathType: Prefix
+          service: front
+          port: 3000
+        - path: /api
+          pathType: Prefix
+          service: web
+          port: 9000
+

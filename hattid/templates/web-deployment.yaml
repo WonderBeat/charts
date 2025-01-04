@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "hattid.fullname" . }}-web
+  labels:
+    {{- include "hattid.web.labels" . | nindent 4 }}-web
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "hattid.web.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "hattid.web.labels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}-web
+          image: "{{ .Values.web.image.repository }}:{{ .Values.web.image.tag | default .Chart.AppVersion }}"
+          # TODO add probes
+          # livenessProbe:
+          #   - toYaml .Values.livenessProbe | nindent 12 
+          # readinessProbe:
+          #   - toYaml .Values.readinessProbe | nindent 12 
+          volumeMounts:
+            - name: config
+              mountPath: /config
+      volumes:
+        - name: config
+          configMap:
+            name: {{ .Release.Name }}-web-config

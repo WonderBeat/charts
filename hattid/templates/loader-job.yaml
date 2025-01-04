@@ -1,0 +1,43 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "hattid.fullname" . }}-loader
+  labels:
+    {{- include "hattid.loader.labels" . | nindent 4 }}-loader
+spec:
+  schedule: {{ .Values.loader.schedule }}
+  concurrencyPolicy: Forbid
+  jobTemplate: 
+    ttlSecondsAfterFinished: 3200
+    successfulJobsHistoryLimit: 2
+    backoffLimit: 0
+    spec:
+      template:
+        spec:
+          restartPolicy: Never
+          volumes:
+            - name: config
+              configMap:
+                name: {{ .Release.Name }}-loader-config
+          containers:
+            - name: {{ .Chart.Name }}-web
+              image: {{ .Values.loader.image.repository }}:{{ .Values.loader.image.tag }}
+              {{- with .Values.loader.resources }}
+              imagePullPolicy: Always
+              resources:
+                {{- toYaml . | nindent 16 }}
+              {{- end }}
+              env:
+                - name: AKKA_CONFIG
+                  value: /config/application.conf
+              volumeMounts:
+                - name: config
+                  mountPath: /config
+              command:
+                - java
+                - "-Dconfig.file=/config/application.conf"
+                - -jar
+                - /app/akka-loader-assembly-0.1.jar
+                - loadScheduled
+                - --entity
+                - auto

@@ -80,7 +80,7 @@ releases:
                         mountPath: /etc/clickhouse-server/users.d
                     resources:
                       limits:
-                        memory: "3G"
+                        memory: "2G"
                 volumes:
                   - name: users-config
                     configMap:

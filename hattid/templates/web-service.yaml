@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "hattid.fullname" . }}-web
+  labels:
+    {{- include "hattid.web.labels" . | nindent 4 }}
+spec:
+  ports:
+    - port: {{ .Values.web.service.port }}
+      targetPort: {{ .Values.web.service.port }} 
+      protocol: TCP
+  selector:
+    {{- include "hattid.web.selectorLabels" . | nindent 4 }}
