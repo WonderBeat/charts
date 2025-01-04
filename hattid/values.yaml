@@ -49,4 +49,13 @@ ingress:
           pathType: Prefix
           service: web
           port: 9000
-
+    - host: hattid.com
+      paths:
+        - path: /
+          pathType: Prefix
+          service: front
+          port: 3000
+        - path: /api
+          pathType: Prefix
+          service: web
+          port: 9000
