@@ -1,0 +1,83 @@
+repositories:
+  - name: mageai
+    url: https://mage-ai.github.io/helm-charts
+releases:
+  - name: mageai
+    namespace: orchestration
+    chart: mageai/mageai
+    values:
+      - scheduler:
+          resources:
+            limits:
+              memory: 256Mi
+            requests:
+              memory: 100Mi
+      - webServer:
+          resources:
+            limits:
+              memory: 160Mi
+            requests:
+              memory: 30Mi
+
+      - extraVolumeMounts: {}
+          # - name: mage-fs
+          #   mountPath: /home/src
+
+      - extraVolumes: {}
+          # - name: mage-fs
+          #   persistentVolumeClaim:
+          #     claimName: pvc-mageai
+
+      - postgresql:
+          enabled: true
+          fullnameOverride: "postgresql-mageai"
+          storageClassName: local-path
+          primary:
+            affinity:
+              nodeAffinity:
+                requiredDuringSchedulingIgnoredDuringExecution:
+                  nodeSelectorTerms:
+                  - matchExpressions:
+                    - key: kubernetes.io/hostname
+                      operator: NotIn
+                      values:
+                        - xpand
+      - persistence:
+          enabled: false
+          storageClassName: local-path
+          dynamicProvisioning: true
+      - affinity:
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+              - matchExpressions:
+                - key: kubernetes.io/hostname
+                  operator: NotIn
+                  values:
+                    - xpand
+      - service:
+          type: ClusterIP
+      - secret.yaml
+  - name: mage-ingress
+    namespace: orchestration
+    chart: main/raw
+    values:
+      - resources:
+        - apiVersion: networking.k8s.io/v1
+          kind: Ingress
+          metadata:
+            name: mageai
+            annotations:
+              kubernetes.io/ingress.class: traefik
+          spec:
+            rules:
+            - host: "mage.gladiators.dev"
+              http:
+                paths:
+                - path: /
+                  pathType: Prefix
+                  backend:
+                    service:
+                      name: mageai
+                      port:
+                        number: 6789
