@@ -1,0 +1,33 @@
+repositories:
+  - name: andrcuns
+    url: https://andrcuns.github.io/charts
+releases:
+  - name: harbor
+    namespace: ci
+    chart: andrcuns/buildkit-service
+    values:
+      - buildkitdToml: |
+          debug = false
+          insecure-entitlements = [ "network.host", "security.insecure" ]
+          [worker.oci]
+              enabled = true
+              rootless = true
+          [registry."docker.io"]
+              mirrors = ["harbor.gladiators.dev/docker-mirror"]
+          [registry."ghcr.io"]
+              mirrors = ["harbor.gladiators.dev/github-mirror"]
+      - resources:
+          requests:
+            memory: 300Mi
+          limits:
+            memory: 1Gi
+      - rootless: true
+      - affinity:
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+              - matchExpressions:
+                - key: kubernetes.io/hostname
+                  operator: NotIn
+                  values:
+                  - jonapot
