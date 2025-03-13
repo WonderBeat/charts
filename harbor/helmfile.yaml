@@ -123,5 +123,5 @@ releases:
           type: external
           external:
             addr: redis-master.db.svc.cluster.local:6379
-      - logLevel: debug
+      - logLevel: error
       - secret.yaml
