@@ -2,6 +2,19 @@ repositories:
   - name: harbor
     url: https://helm.goharbor.io
 releases:
+  - name: harbor-middleware
+    namespace: db
+    chart: main/raw
+    values:
+      - resources:
+          - apiVersion: traefik.containo.us/v1alpha1
+            kind: Middleware
+            metadata:
+              name: harbor-proxy-headers-magic
+            spec:
+              headers:
+                customRequestHeaders:
+                  X-Forwarded-Proto: "https"
   - name: harbor
     namespace: db
     chart: harbor/harbor
@@ -17,30 +30,22 @@ releases:
                       operator: In
                       values:
                         - amd64
-                    # - key: kubernetes.io/hostname
-                    #   operator: NotIn
-                    #   values:
-                    #     - jonapot
-            # image:
-            #   repository: chainguard/harbor-db
-            #   tag: sha256-b8b3b0e727452c0a59973cc0e7b9353d306d73a46fb751d6140dc2e15d57786c.sig
             resources:
               limits:
                 memory: "300Mi"
               requests:
                 memory: "50Mi"
-
       - portal:
           image:
             repository: bitnami/harbor-portal
-            tag: 2.11.0
+            tag: 2.12.2
           resources:
             limits:
               memory: "300Mi"
             requests:
               memory: "50Mi"
       - core:
-          replicas: 2
+          replicas: 1
           affinity:
             nodeAffinity:
               requiredDuringSchedulingIgnoredDuringExecution:
@@ -54,9 +59,6 @@ releases:
                     operator: NotIn
                     values:
                       - xpand
-          # image:
-          #   repository: bitnami/harbor-core
-          #   tag: 2.10.2
           resources:
             limits:
               memory: "300Mi"
@@ -64,9 +66,6 @@ releases:
               memory: "50Mi"
 
       - jobservice:
-          # image:
-          #   repository: bitnami/harbor-jobservice
-          #   tag: 2.10.2
           maxJobWorkers: 1
           jobLoggers:
             - stdout
@@ -98,11 +97,8 @@ releases:
           controller:
             image:
               repository: bitnami/harbor-registryctl
-              tag: 2.11.0
+              tag: 2.12.2
           registry:
-            # image:
-            #   repository: syseleven/harbor-registry
-            #   tag: 2.10.2
             resources:
               limits:
                 memory: "300Mi"
@@ -115,6 +111,9 @@ releases:
             hosts:
               core: harbor.gladiators.dev
               className: traefik
+            annotations:
+              traefik.ingress.kubernetes.io/router.middlewares: db-harbor-proxy-headers-magic@kubernetescrd
+
       - externalURL: https://harbor.gladiators.dev
       - persistence:
           resourcePolicy: drop
@@ -124,5 +123,5 @@ releases:
           type: external
           external:
             addr: redis-master.db.svc.cluster.local:6379
-      - logLevel: error
+      - logLevel: debug
       - secret.yaml
