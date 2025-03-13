@@ -1,22 +1,4 @@
 releases:
-#   - name: nebula-lighthouse
-#     chart: ./nebula-lighthouse
-#     namespace: network
-#     values:
-#       - replicaCount: 1
-#       - values-lighthouse.gotmpl
-#       - affinity:
-#           nodeAffinity:
-#             requiredDuringSchedulingIgnoredDuringExecution:
-#               nodeSelectorTerms:
-#               - matchExpressions:
-#                 - key: kubernetes.io/hostname
-#                   operator: In
-#                   values:
-#                     # - k8s-2
-#                     - kesaram
-#                     - jonapot
-#                     # - k8s-usa-1
   - name: nebula
     chart: ./nebula
     namespace: network
@@ -33,6 +15,8 @@ releases:
       - common:
           client:
             config:
+              handshakes:
+                try_interval: 500
               static_host_map:
                 '10.88.101.1':
                   - '193.123.56.221:6969' # kesaram
@@ -52,6 +36,8 @@ releases:
                     'awg.*': false
                     'wg.*': false
                     'veth.*': false
+                    'vir.*': false
+                    'vnet.*': false
                     'tailscal.*': false
                     'cni.*': false
                     'flannel.*': false

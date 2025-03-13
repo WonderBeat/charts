@@ -1,6 +1,6 @@
 
 image: nebulaoss/nebula
-tag: "1.9.3"
+tag: "1.9.5"
 
 args:
   - "--config"
