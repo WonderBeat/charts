@@ -2,8 +2,34 @@ releases:
   - name: pihole
     namespace: default
     chart: ./
-    historyMax: 1
     values:
-      - values.yaml
-      - secret.yaml
-      - TZ: America/Chicago
+      - image:
+          repository: pihole/pihole
+          tag: 2025.03.0
+
+      - resources:
+          limits:
+            memory: 250Mi
+          requests:
+            memory: 90Mi
+
+      - config: |
+          server=/stage.san/10.88.101.1#55
+          server=/production.san/10.88.101.1#55
+          server=/internal.san/10.88.101.1#55
+          server=/cluster.local/10.88.101.1#55
+          address=/router.io/192.168.11.1
+          address=/nasduck.synology.me/10.88.101.13
+      - env:
+        - name: TZ
+          value: America/Chicago
+        - name: FTLCONF_misc_dnsmasq_lines
+          value: |
+            server=/stage.san/10.88.101.1#55;
+            server=/production.san/10.88.101.1#55;
+            server=/internal.san/10.88.101.1#55;
+            server=/cluster.local/10.88.101.1#55;
+            address=/router.io/192.168.11.1;
+            address=/nasduck.synology.me/10.88.101.13;
+        - name: FTLCONF_misc_etc_dnsmasq_d
+          value: 'true'

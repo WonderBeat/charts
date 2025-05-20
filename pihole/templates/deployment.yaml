@@ -31,11 +31,10 @@ spec:
           ports:
             - containerPort: 53
             - containerPort: 80
+          {{- with .Values.env }}
           env:
-            - name: WEBPASSWORD
-              value: {{ .Values.webpassdord }}
-            - name: TZ
-              value: {{ .Values.TZ }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           volumeMounts:
             - name: config-volume
               mountPath: /etc/dnsmasq.d/10-custom.conf
