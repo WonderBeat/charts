@@ -81,9 +81,9 @@ config: |
   # server=10.69.101.1#53
   server=10.46.209.63
   # server=dnscrypt-dnscrypt-proxy-udp.default.svc.cluster.local#53
-  server=/stage.san/127.0.0.53#53
-  server=/production.san/10.88.101.1#53
-  server=/internal.san/10.69.101.1#53
+  server=/stage.san/10.88.101.1#55
+  server=/production.san/10.88.101.1#55
+  server=/internal.san/10.88.101.1#55
   server=/.dg/10.46.0.10#53
   server=/k.dg/10.46.0.10#53
   server=/cluster.local/10.46.0.10#53
