@@ -6,27 +6,27 @@ releases:
     namespace: monitoring
     chart: open-telemetry/opentelemetry-collector
     values:
-      - affinity:
-          nodeAffinity:
-            requiredDuringSchedulingIgnoredDuringExecution:
-              nodeSelectorTerms:
-              - matchExpressions:
-                - key: kubernetes.io/hostname
-                  operator: NotIn
-                  values:
-                  - jonapot
+      # - affinity:
+      #     nodeAffinity:
+      #       requiredDuringSchedulingIgnoredDuringExecution:
+      #         nodeSelectorTerms:
+      #         - matchExpressions:
+      #           - key: kubernetes.io/hostname
+      #             operator: NotIn
+      #             values:
+      #             - jonapot
       - secrets.yaml
       - image:
           repository: "otel/opentelemetry-collector-k8s"
+          tag: 0.123.0
       - mode: daemonset
       - hostNetwork: true
       - useGOMEMLIMIT: true
       - resources:
           requests:
-            memory: 70Mi
-            cpu: 10m
+            memory: 50Mi
           limits:
-            memory: 120Mi
+            memory: 100Mi
       - ports:
           metrics:
             enabled: true
@@ -46,10 +46,42 @@ releases:
             jaeger: null
             zipkin: null
             prometheus:
+              # api_server:
+              #   enabled: true
+              #   server_config:
+              #     endpoint: "localhost:9090"
               config:
+                global:
+                  scrape_interval: 10s
                 scrape_configs:
                   - job_name: opentelemetry-collector
-                    scrape_interval: 20s
                     static_configs:
                       - targets:
                           - ${env:MY_POD_IP}:8888
+                  - job_name: "kubernetes-pods"
+                    kubernetes_sd_configs:
+                      - role: pod
+                        selectors:
+                          - field: spec.nodeName=${K8S_NODE_NAME}
+                            role: pod
+                    relabel_configs:
+                      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+                        action: keep
+                        regex: true
+                      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+                        action: replace
+                        target_label: __metrics_path__
+                        regex: (.+)
+                      - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+                        action: replace
+                        regex: ([^:]+)(?::\d+)?;(\d+)
+                        replacement: $${1}:$${2}
+                        target_label: __address__
+                      # - action: labelmap
+                      #   regex: __meta_kubernetes_pod_label_(.+)
+                      - source_labels: [__meta_kubernetes_namespace]
+                        action: replace
+                        target_label: kubernetes_namespace
+                      - source_labels: [__meta_kubernetes_pod_name]
+                        action: replace
+                        target_label: kubernetes_pod_name
