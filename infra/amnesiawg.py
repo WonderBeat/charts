@@ -5,6 +5,7 @@ from pyinfra.facts.server import Command, Hostname
 from pyinfra.operations import apt, files, server, systemd
 from pyinfra.facts.files import File, FindInFile
 from pyinfra import logger
+import os
 
 apt.repo(
     "deb https://ppa.launchpadcontent.net/amnezia/ppa/ubuntu/ jammy main", _sudo=True
@@ -30,7 +31,7 @@ assert wg_config_attrs is not None
 
 wg_private_key = host.get_fact(
     Command,
-    "grep -E '^PrivateKey\s?=\s?.+$' /etc/wireguard/wg0.conf | rev | xargs | cut -d ' ' -f1 |rev | xargs",
+    "grep -E '^PrivateKey\s?=\s?.+$' /etc/wireguard/awg0.conf | rev | xargs | cut -d ' ' -f1 |rev | xargs",
     _sudo=True,
 )
 wg_public_key = host.get_fact(
@@ -42,12 +43,12 @@ wg_public_key = host.get_fact(
 wg_address = (
     host.get_fact(
         Command,
-        "grep -E '^Address\s?=\s?.+$' /etc/wireguard/wg0.conf | rev | xargs | cut -d '=' -f1 | rev | xargs",
+        "grep -E '^Address\s?=\s?.+$' /etc/wireguard/awg0.conf | rev | xargs | cut -d '=' -f1 | rev | xargs",
         _sudo=True,
-    )
-    .strip()
-    .replace("10.69.", "10.77.")
+    ).strip()
+    or host.data.get("awg-address")
 )
+
 
 new_conf = files.template(
     name="server config",
@@ -55,6 +56,7 @@ new_conf = files.template(
     dest="/etc/amnezia/amneziawg/awg0.conf",
     _sudo=True,
     private_key=wg_private_key,
+    keepalive=
     mode=700,
     address=wg_address,
 )

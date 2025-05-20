@@ -22,4 +22,11 @@ server.systemd.service(
     _sudo=True,
 )
 
+server.shell(
+    name="drop caches",
+    commands=["crictl rmi --prune"],
+    _sudo=True,
+)
+
+
 # dragonfly-scheduler-0.scheduler.db.svc.cluster.local

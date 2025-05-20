@@ -3,10 +3,11 @@
 oracle_denis = [
     ("oracle", {"multicloud_gateway": True}),
     ("nagi", {"k8s_master": True, "multicloud_gateway": False}),
-    ("ks2", { "multicloud_gateway": True }),
+    ("ks2", {"multicloud_gateway": True}),
     ("kesaram", {"k8s_master": True, "multicloud_gateway": False}),
 ]
 
 oracle_andrey = ["o1", "o2", "o3"]
 hezner_eu = ["ks2"]
-hezner_us = ["usa1"]
+
+misc = [("orange", {"keep_alive": True, "awg-address": "10.77.101.38"})]
