@@ -2,16 +2,18 @@ repositories:
   - name: andrcuns
     url: https://andrcuns.github.io/charts
 releases:
-  - name: harbor
+  - name: buildkit
     namespace: ci
     chart: andrcuns/buildkit-service
     values:
+      - image:
+          tag: rootless
       - buildkitdToml: |
           debug = false
-          insecure-entitlements = [ "network.host", "security.insecure" ]
           [worker.oci]
               enabled = true
               rootless = true
+              max-parallelism = 2
           [registry."docker.io"]
               mirrors = ["harbor.gladiators.dev/docker-mirror"]
           [registry."ghcr.io"]
@@ -20,7 +22,7 @@ releases:
           requests:
             memory: 300Mi
           limits:
-            memory: 1Gi
+            memory: 2Gi
       - rootless: true
       - affinity:
           nodeAffinity:
