@@ -1,6 +1,7 @@
 .DS_Store
 .idea
 *.log
+*.sql
 tmp/
 
 .ruby-version
