@@ -16,7 +16,7 @@ releases:
           client:
             config:
               handshakes:
-                try_interval: 500
+                try_interval: 1111
               static_host_map:
                 '10.88.101.1':
                   - '193.123.56.221:6969' # kesaram
@@ -28,9 +28,12 @@ releases:
                 key: /etc/nebula/node.key
               lighthouse:
                 am_lighthouse: false
+                interval: 20
                 hosts:
                   - '10.88.101.1'
+                  - '10.88.101.5'
                 local_allow_list:
+                  '2a01::/3': false # ban ipv6
                   interfaces:
                     'docker.*': false
                     'awg.*': false
