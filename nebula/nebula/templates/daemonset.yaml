@@ -33,6 +33,7 @@ spec:
             {{- toYaml . | nindent 12 }}
           {{- end }}
           image: "{{ default "henryzhangsta/nebula" $root.Values.image }}:{{ default "latest" $root.Values.tag }}"
+          imagePullPolicy: IfNotPresent
           securityContext:
             capabilities:
               add:

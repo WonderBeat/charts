@@ -15,6 +15,7 @@ nodes:
     config:
       lighthouse:
         am_lighthouse: true
+        hosts: {}
         advertise_addrs:
           - '193.123.56.221:6969'
       sshd:
@@ -36,6 +37,7 @@ nodes:
         port: 32243
       lighthouse:
         am_lighthouse: true
+        hosts: {}
         advertise_addrs:
           # - '158.101.197.223:6969'
           - '158.101.197.223:32243'
@@ -64,28 +66,6 @@ nodes:
             via: 10.88.101.8
           - route: 10.98.39.235/32
             via: 10.88.101.1
-
-
-
-  - name: k8s-usa-1
-    public: |
-{{ readFile "secretdir/k8s-usa-1.crt" | indent 5 }}
-    private: |
-{{ readFile "secretdir/k8s-usa-1.key" | indent 5 }}
-    config:
-      listen:
-        port: 6000
-      tun:
-        drop_local_broadcast: true
-        drop_multicast: true
-        unsafe_routes:
-          - route: 10.98.233.244/32
-            via: 10.88.101.8
-          - route: 10.98.39.235/32
-            via: 10.88.101.1
-      lighthouse:
-        local_allow_list:
-          '2a01::/3': false
 
   - name: oracle1
     public: |
@@ -153,11 +133,12 @@ nodes:
       tun:
         drop_local_broadcast: false
         drop_multicast: false
-        # unsafe_routes:
-        #   - route: 10.98.233.244/32
-        #     via: 10.88.101.8
-        #   - route: 10.98.39.235/32
-        #     via: 10.88.101.1
+        unsafe_routes:
+        - route: 10.98.233.244/32
+          via: 10.88.101.8
+        - route: 10.98.39.235/32
+          via: 10.88.101.1
+
 
         #   - route: 8.34.208.0/20
         #     via: 10.88.101.1
