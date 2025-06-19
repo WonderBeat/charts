@@ -1,0 +1,43 @@
+repositories:
+  - name: t3n
+    url: https://storage.googleapis.com/t3n-helm-charts
+releases:
+  - name: mosquitto
+    namespace: trading
+    chart: t3n/mosquitto
+    values:
+      - secret.yaml
+      - image:
+          tag: 2.0.21
+      - resources:
+          limits:
+            memory: 128Mi
+      - serviceAccount:
+          create: false
+      - service:
+          externalTrafficPolicy: null
+      #     type: ClusterIp
+      # - ports:
+      #     mqtt:
+      #       nodePort: 31883
+      - persistence:
+          enabled: false
+      - config: |
+          allow_anonymous false
+          persistence false
+          persistence_location /mosquitto/data/
+          log_dest stdout
+          listener 1883
+          listener 9090
+          protocol websockets
+          socket_domain ipv4
+
+      - affinity:
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+              - matchExpressions:
+                - key: kubernetes.io/hostname
+                  operator: NotIn
+                  values:
+                    - xpand
