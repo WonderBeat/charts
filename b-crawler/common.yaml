@@ -1,0 +1,8 @@
+- name: MQTT
+  value: mosquitto.trading.svc.cluster.local
+- name: MOTHERSHIP
+  value: "149.28.27.193:8082" ## 8082 - fake port #value: "149.28.27.193:8081"
+- name: insecure
+  value: "true"
+- name: CATALOG
+  value: "161"

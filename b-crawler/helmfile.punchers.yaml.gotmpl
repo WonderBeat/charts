@@ -1,0 +1,17 @@
+releases:
+  - name: puncher
+    namespace: trading
+    chart: ./b-crawler
+    values:
+      - fullnameOverride: puncher
+      - replicaCount: 5
+      - maxSkew: 1
+        topologyKey: kubernetes.io/hostname
+        whenUnsatisfiable: DoNotSchedule
+        labelSelector:
+          matchLabels:
+            app.kubernetes.io/instance: puncher
+      - env:
+        - name: PASSIVE
+          value: "true"
+      {{ readFile "common.yaml" | nindent 8 }}

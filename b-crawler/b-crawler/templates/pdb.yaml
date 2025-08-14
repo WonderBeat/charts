@@ -1,0 +1,10 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "b-crawler.fullname" . }}
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      {{- include "b-crawler.selectorLabels" . | nindent 6 -}}
+

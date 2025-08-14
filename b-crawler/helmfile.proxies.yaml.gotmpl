@@ -1,0 +1,102 @@
+releases:
+  - name: cf-scrape-me
+    namespace: trading
+    chart: ./mothership/
+    values:
+      - fullnaveOverride: cf-scrape-me
+      - replicaCount: 0
+      # - topologySpreadConstraints:
+      #     - maxSkew: 1
+      #       topologyKey: kubernetes.io/hostname
+      #       whenUnsatisfiable: DoNotSchedule
+      #       labelSelector:
+      #         matchLabels:
+      #           "app.kubernetes.io/instance": cf-scrape
+      #       matchLabelKeys:
+      #         - pod-template-hash
+      - env:
+        - name: CLOUDFLARE
+          value: "1"
+        # - name: EXIT_ON_ERR
+        #   value: "true"
+        - name: PROXY_GET_URL
+          #value: "http://10.46.95.237/random-proxies"
+          value: "http://proxy-aggregator-mothership.trading.svc.cluster.local/random-proxies"
+        - name: TEST_URLS
+          value: "https://www.binance.me/bapi/apex/v1/public/apex/cms/article/list/query?pageNo=1&type=1&pageSize=2&lan=1"
+      - command:
+          - /bin/sh
+          - -ec 
+          - |
+            {{- readFile "cloudflare.sh" | nindent 12 }}
+  - name: cf-scrape-info
+    namespace: trading
+    chart: ./mothership/
+    values:
+      - fullnaveOverride: cf-scrape-info
+      - replicaCount: 0
+      - env:
+        - name: CLOUDFLARE
+          value: "1"
+        - name: EXIT_ON_ERR
+          value: "true"
+        - name: PROXY_GET_URL
+          value: "http://proxy-aggregator-mothership.trading.svc.cluster.local/random-proxies"
+        - name: TEST_URLS
+          value: "https://www.binance.info/bapi/apex/v1/public/apex/cms/article/list/query?pageNo=1&type=1&pageSize=2&lan=1"
+      - command:
+          - /bin/sh
+          - -ec 
+          - |
+            {{- readFile "cloudflare.sh" | nindent 12 }}
+      # - affinity:
+      #     nodeAffinity:
+      #       requiredDuringSchedulingIgnoredDuringExecution:
+      #         nodeSelectorTerms:
+      #         - matchExpressions:
+      #           - key: kubernetes.io/hostname
+      #             operator: In
+      #             values:
+      #               - xpand
+      #               - k8s-usa-1
+      #               - oracle1
+      #               - jonapot
+      #               - kesaram
+      #               - nagi
+  - name: proxy-aggregator
+    namespace: trading
+    chart: ./mothership/
+    values:
+      - fullnaveOverride: proxy-aggregator
+      - replicaCount: 1
+      - env:
+        - name: PROXY_LIST
+          value: "1"
+        - name: URL_CHECK
+          #value: "https://www.binance.com/bapi/apex/v1/public/apex/cms/article/list/query?pageNo=1&type=1&pageSize=2&lan=1"
+          value: "https://api-manager.upbit.com/api/v1/announcements?os=web&page=1&per_page=5&category=all"
+      - ingress:
+          enabled: false
+          className: "traefik"
+          annotations:
+            kubernetes.io/ingress.class: traefik
+          hosts:
+            - host: proxy.gladiators.dev
+              paths:
+                - path: /
+                  pathType: ImplementationSpecific
+      - affinity:
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+              - matchExpressions:
+                - key: topology.kubernetes.io/zone
+                  operator: In
+                  values:
+                    - oracle_eu_andrey
+
+      - command:
+          - /bin/sh
+          - -ec 
+          - |
+            {{- readFile "cloudflare.sh" | nindent 12 }}

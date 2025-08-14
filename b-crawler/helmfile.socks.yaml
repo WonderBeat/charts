@@ -1,0 +1,30 @@
+releases:
+  - name: socks-proxy
+    namespace: trading
+    chart: ./socks-proxy-server/
+    values:
+      - fullnaveOverride: socks-proxy
+      - replicaCount: 5
+      - topologySpreadConstraints:
+          - maxSkew: 1
+            topologyKey: kubernetes.io/hostname
+            whenUnsatisfiable: DoNotSchedule
+            labelSelector:
+              matchLabels:
+                "app.kubernetes.io/instance": socks-proxy
+            matchLabelKeys:
+              - pod-template-hash
+      - affinity:
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+              - matchExpressions:
+                - key: kubernetes.io/hostname
+                  operator: In
+                  values:
+                    - xpand
+                    - k8s-usa-1
+                    - oracle1
+                    - jonapot
+                    - kesaram
+                    - nagi

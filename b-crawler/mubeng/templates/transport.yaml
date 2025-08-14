@@ -1,0 +1,17 @@
+apiVersion: traefik.io/v1alpha1
+kind: ServersTransport
+metadata:
+  name: {{ include ".fullname" . }}
+  labels:
+    {{- include ".labels" . | nindent 4 }}
+  {{- with .Values.transport.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  insecureSkipVerify: true
+  selector:
+    app.kubernetes.io/name: {{ include ".name" . }}
+    helm.sh/chart: {{ include ".chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
