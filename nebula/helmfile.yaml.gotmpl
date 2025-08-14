@@ -1,0 +1,79 @@
+releases:
+  - name: nebula
+    chart: ./nebula
+    namespace: network
+
+    values:
+      - values-client.gotmpl
+      # - image: busybox
+      # - tag: latest
+      # - command:
+      #   - sleep
+      #   - 20h
+      # - args: {}
+
+      - common:
+          client:
+            config:
+              handshakes:
+                try_interval: 1111
+              static_host_map:
+                '10.88.101.1':
+                  - '193.123.56.221:6969' # kesaram
+                '10.88.101.5':
+                  - '158.101.197.223:32243' # jonapot
+              pki:
+                ca: /etc/nebula/ca.crt
+                cert: /etc/nebula/node.crt
+                key: /etc/nebula/node.key
+              lighthouse:
+                am_lighthouse: false
+                interval: 20
+                hosts:
+                  - '10.88.101.1'
+                  - '10.88.101.5'
+                local_allow_list:
+                  '2a01::/3': false # ban ipv6
+                  interfaces:
+                    'docker.*': false
+                    'awg.*': false
+                    'wg.*': false
+                    'veth.*': false
+                    'vir.*': false
+                    'vnet.*': false
+                    'tailscal.*': false
+                    'cni.*': false
+                    'flannel.*': false
+                    'tun.*': false
+              listen:
+                host: 0.0.0.0
+                port: 6969
+              punchy:
+                punch: false
+              tun:
+                disabled: false
+                dev: nebula
+                drop_local_broadcast: true
+                drop_multicast: true
+                tx_queue: 1000
+                mtu: 1420
+                # routes:
+                #   - mtu: 8000
+                #     route: 10.98.0.0/16
+              logging:
+                level: info
+                format: text
+              firewall:
+                conntrack:
+                  tcp_timeout: 10m
+                  udp_timeout: 3m
+                  default_timeout: 10m
+                  max_connections: 1000
+                outbound:
+                  - port: any
+                    proto: any
+                    host: any
+                inbound:
+                  - port: any
+                    proto: any
+                    host: any
