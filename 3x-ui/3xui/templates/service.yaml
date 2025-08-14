@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: s{{ include "3xui.fullname" . }}
+  labels:
+    {{- include "3xui.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "3xui.selectorLabels" . | nindent 4 }}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: s{{ include "3xui.fullname" . }}-https
+  labels:
+    {{- include "3xui.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: 443
+      targetPort: https
+      protocol: TCP
+      name: https
+  selector:
+    {{- include "3xui.selectorLabels" . | nindent 4 }}
