@@ -38,14 +38,14 @@ releases:
       - portal:
           image:
             repository: bitnami/harbor-portal
-            tag: 2.12.2
+            tag: 2.13.1
           resources:
             limits:
               memory: "300Mi"
             requests:
               memory: "50Mi"
       - core:
-          replicas: 1
+          replicas: 2
           affinity:
             nodeAffinity:
               requiredDuringSchedulingIgnoredDuringExecution:
@@ -97,7 +97,7 @@ releases:
           controller:
             image:
               repository: bitnami/harbor-registryctl
-              tag: 2.12.2
+              tag: 2.13.1
           registry:
             resources:
               limits:

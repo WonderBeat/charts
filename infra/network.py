@@ -14,6 +14,7 @@ new_conf = files.template(
     src="templates/nftables.j2.conf.secret",
     dest="/etc/nftables.conf",
     k8s_port_open=(host.data.get("k8s_master") is True),
+    v2ray=(host.data.get("v2ray") is True),
     mode=700,
     _sudo=True,
 )

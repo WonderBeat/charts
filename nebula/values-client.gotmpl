@@ -48,6 +48,10 @@ nodes:
     private: |
 {{ readFile "secretdir/nagi.key" | indent 5 }}
     config:
+      tun:
+        unsafe_routes:
+          - route: 100.64.0.0/10
+            via: 10.88.101.1
       lighthouse:
         advertise_addrs:
           - '143.47.182.88:6969'
