@@ -8,12 +8,12 @@ releases:
       - command: "/upbit"
       - env:
         - name: MOTHERSHIP
-          value: 127.0.0.1:8080
+          value: 149.28.27.193:8081
         - name: INTERVAL
           value: "4900"
-      - command: 
+      - command:
           - /bin/sh
-          - -ec 
+          - -ec
           - |
             { touch metrics.prometheus && /nc-web.sh; } &
             /upbit
@@ -22,23 +22,23 @@ releases:
     namespace: trading
     chart: ./b-crawler
     values:
-      - replicaCount: 9
+      - replicaCount: 6
       - fullnameOverride: crawler-upbit-proxy
       - command: "/upbit"
       - env:
         - name: MOTHERSHIP
-          value: 127.0.0.1:8080
+          value: 149.28.27.193:8081
         - name: INTERVAL
-          value: "1000"
+          value: "900"
         - name: insecure
           value: "true"
         - name: QUERY_TIMEOUT
           value: "3000"
         - name: PROXY_LIST
           value: "http://proxy-aggregator-mothership.trading.svc.cluster.local/random-proxies?count=100"
-      - command: 
+      - command:
           - /bin/sh
-          - -ec 
+          - -ec
           - |
             { touch metrics.prometheus && /nc-web.sh; } &
             /upbit
@@ -52,18 +52,18 @@ releases:
       - command: "/upbit"
       - env:
         - name: MOTHERSHIP
-          value: 127.0.0.1:8080
+          value: 149.28.27.193:8081
         - name: INTERVAL
-          value: "5000"
+          value: "4900"
         - name: insecure
           value: "true"
         - name: QUERY_TIMEOUT
           value: "1000"
         - name: DOMAIN
-          value: "https://upbit.gladiators.dev"
-      - command: 
+          value: "https://upbit.gladiators.dev."
+      - command:
           - /bin/sh
-          - -ec 
+          - -ec
           - |
             { touch metrics.prometheus && /nc-web.sh; } &
             /upbit
@@ -72,25 +72,25 @@ releases:
     namespace: trading
     chart: ./b-crawler
     values:
-      - replicaCount: 7
+      - replicaCount: 9
       - fullnameOverride: crawler-upbit-cf-work-proxy
       - command: "/upbit"
       - env:
         - name: MOTHERSHIP
-          value: 127.0.0.1:8080
+          value: 149.28.27.193:8081
         - name: INTERVAL
           value: "2000"
         - name: insecure
           value: "true"
         - name: QUERY_TIMEOUT
-          value: "3000"
+          value: "7000"
         - name: PROXY_LIST
           value: "http://proxy-aggregator-mothership.trading.svc.cluster.local/random-proxies?count=100"
         - name: DOMAIN
-          value: "https://upbit.gladiators.dev"
-      - command: 
+          value: "https://upbit.gladiators.dev."
+      - command:
           - /bin/sh
-          - -ec 
+          - -ec
           - |
             { touch metrics.prometheus && /nc-web.sh; } &
             /upbit

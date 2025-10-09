@@ -31,7 +31,7 @@ oracle_denis = [
 ]
 
 oracle_andrey = ["o1", "o2", "o3"]
-hezner_eu = ["ks2"]
+hetzner_eu = ["ks2"]
 
 misc = [
     ("orange", {"keep_alive": True, "awg-address": "10.77.101.38"}),

@@ -7,7 +7,7 @@ releases:
     chart: main/raw
     values:
       - resources:
-          - apiVersion: traefik.containo.us/v1alpha1
+          - apiVersion: traefik.io/v1alpha1
             kind: Middleware
             metadata:
               name: harbor-proxy-headers-magic
@@ -25,11 +25,11 @@ releases:
               nodeAffinity:
                 requiredDuringSchedulingIgnoredDuringExecution:
                   nodeSelectorTerms:
-                  - matchExpressions:
-                    - key: kubernetes.io/arch
-                      operator: In
-                      values:
-                        - amd64
+                    - matchExpressions:
+                        - key: kubernetes.io/arch
+                          operator: In
+                          values:
+                            - amd64
             resources:
               limits:
                 memory: "300Mi"
@@ -50,15 +50,15 @@ releases:
             nodeAffinity:
               requiredDuringSchedulingIgnoredDuringExecution:
                 nodeSelectorTerms:
-                - matchExpressions:
-                  - key: kubernetes.io/arch
-                    operator: In
-                    values:
-                      - amd64
-                  - key: kubernetes.io/hostname
-                    operator: NotIn
-                    values:
-                      - xpand
+                  - matchExpressions:
+                      - key: kubernetes.io/arch
+                        operator: In
+                        values:
+                          - amd64
+                      - key: kubernetes.io/hostname
+                        operator: NotIn
+                        values:
+                          - xpand
           resources:
             limits:
               memory: "300Mi"
@@ -73,11 +73,11 @@ releases:
             nodeAffinity:
               requiredDuringSchedulingIgnoredDuringExecution:
                 nodeSelectorTerms:
-                - matchExpressions:
-                  - key: kubernetes.io/arch
-                    operator: In
-                    values:
-                      - amd64
+                  - matchExpressions:
+                      - key: kubernetes.io/arch
+                        operator: In
+                        values:
+                          - amd64
           replicas: 1
           resources:
             limits:
@@ -89,11 +89,11 @@ releases:
             nodeAffinity:
               requiredDuringSchedulingIgnoredDuringExecution:
                 nodeSelectorTerms:
-                - matchExpressions:
-                  - key: kubernetes.io/arch
-                    operator: In
-                    values:
-                      - amd64
+                  - matchExpressions:
+                      - key: kubernetes.io/arch
+                        operator: In
+                        values:
+                          - amd64
           controller:
             image:
               repository: bitnami/harbor-registryctl

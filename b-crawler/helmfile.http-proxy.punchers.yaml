@@ -1,0 +1,54 @@
+releases:
+  - name: puncher-http
+    namespace: trading
+    chart: ./b-crawler
+    values:
+      - fullnameOverride: puncher-http
+      - replicaCount: 3
+      - maxSkew: 1
+        topologyKey: kubernetes.io/hostname
+        whenUnsatisfiable: DoNotSchedule
+        labelSelector:
+          matchLabels:
+            app.kubernetes.io/instance: puncher-http
+      - env:
+        - name: PASSIVE
+          value: "true"
+        - name: https_proxy
+          value: proxy-pool-http-punch.trading.svc.cluster.local:80
+      {{ readFile "common.yaml" | nindent 8 }}
+
+  - name: proxy-pool-http-punch
+    namespace: trading
+    chart: ./mubeng
+    values:
+      - affinity:
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+              - matchExpressions:
+                - key: topology.kubernetes.io/zone
+                  operator: In
+                  values:
+                    - oracle_eu_andrey
+      - replicaCount: 1
+      - maxSkew: 1
+        topologyKey: kubernetes.io/hostname
+        whenUnsatisfiable: DoNotSchedule
+        labelSelector:
+          matchLabels:
+            app.kubernetes.io/instance: proxy-pool-http-punch
+      - command: 
+          - /bin/sh
+          - -ec 
+          - |
+            while true; do
+              curl -q --max-time 10 --retry 5 -f --retry-delay 2 'https://api.best-proxies.ru/proxylist.txt?key=4660317f00a7da7d037b2b0d50d2f135&limit=300&type=http' 2>/dev/null | tr ' ' '\n' | sed -E 's/^(.+)/http:\/\/\1/' >>/stage-proxy.txt
+              shuf /stage-proxy.txt -o /live.txt
+              sleep 60m
+            done &
+            until [ -f "/live.txt" ] && [ $(wc -l <"/live.txt") -gt 3 ]; do
+              echo -n "."
+              sleep 5s
+            done
+            mubeng -a 0.0.0.0:8000 -t 4s --remove-on-error -f /live.txt -w -min-alive 7
