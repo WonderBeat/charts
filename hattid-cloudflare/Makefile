@@ -8,11 +8,11 @@ repo:
 
 install:
 	@make repo
-	@helm install argo --namespace default -f values.yaml -f secrets.yaml ./
+	@helm install hattid-cloudflare --namespace hattid -f values.yaml -f secrets.yaml ./
 
 upgrade:
 	@make repo
-	@helm upgrade argo --namespace default -f values.yaml -f secrets.yaml ./
+	@helm upgrade hattid-cloudflare --namespace hattid -f values.yaml -f secrets.yaml ./
 
 clean:
-	@helm delete argo --namespace default
+	@helm delete hattid-cloudflare --namespace hattid

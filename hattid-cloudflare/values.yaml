@@ -2,6 +2,15 @@ image:
   repository: cloudflare/cloudflared
   tag: latest
 
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: NotIn
+              values:
+                - xpand
 resources:
   limits:
     memory: 120Mi
