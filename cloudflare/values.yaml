@@ -1,6 +1,7 @@
 image:
   repository: cloudflare/cloudflared
   tag: latest
+  pullPolicy: Always
 
 resources:
   limits:
@@ -8,3 +9,13 @@ resources:
   requests:
     cpu: 10m
     memory: 50Mi
+
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: topology.kubernetes.io/zone
+              operator: In
+              values:
+                - germany

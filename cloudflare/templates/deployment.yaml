@@ -23,6 +23,10 @@ spec:
         app.kubernetes.io/instance: {{ .Release.Name }}
         app.kubernetes.io/managed-by: {{ .Release.Service }}
     spec:
+{{- if .Values.affinity }}
+      affinity:
+{{ toYaml .Values.affinity | indent 8 }}
+{{- end }}
       containers:
         - name: argo-tunnel
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
@@ -37,3 +41,4 @@ spec:
               name: {{ include "argo.name" . }}-secret
       restartPolicy: Always
       terminationGracePeriodSeconds: 60
+

@@ -1,0 +1,12 @@
+repositories:
+  - name: cloudflare
+    url: https://cloudflare.github.io/helm-charts
+
+releases:
+  - name: argo
+    namespace: network
+    chart: ./
+    version: latest
+    values:
+      - values.yaml
+      - secrets.yaml
