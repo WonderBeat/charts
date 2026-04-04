@@ -1,13 +1,18 @@
+---
+# Source: hattid/templates/loader-job.yaml
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: {{ include "hattid.fullname" . }}-loader
+  name: hattid-loader-temp
   labels:
-    {{- include "hattid.loader.labels" . | nindent 4 }}-loader
+    helm.sh/chart: hattid-0.1.0-loader
+    app.kubernetes.io/name: hattid-loader
+    app.kubernetes.io/instance: hattid-loader-loader
+    app.kubernetes.io/managed-by: Helm-loader
 spec:
-  schedule: {{ .Values.loader.schedule }}
+  schedule: 08 * * * *
   concurrencyPolicy: Forbid
-  jobTemplate: 
+  jobTemplate:
     ttlSecondsAfterFinished: 3200
     successfulJobsHistoryLimit: 2
     backoffLimit: 0
@@ -18,25 +23,24 @@ spec:
           volumes:
             - name: config
               configMap:
-                name: {{ .Release.Name }}-loader-config
+                name: hattid-loader-loader-config
           affinity:
               nodeAffinity:
                 requiredDuringSchedulingIgnoredDuringExecution:
                   nodeSelectorTerms:
                     - matchExpressions:
                         - key: kubernetes.io/hostname
-                          operator: NotIn
+                          operator: In
                           values:
-                            - xpand
+                            - k8s-2
 
           containers:
-            - name: {{ .Chart.Name }}-web
-              image: {{ .Values.loader.image.repository }}:{{ .Values.loader.image.tag }}
-              {{- with .Values.loader.resources }}
+            - name: hattid-web
+              image: ghcr.io/blackmorse/hat-all-stats/akka_loader:latest
               imagePullPolicy: Always
               resources:
-                {{- toYaml . | nindent 16 }}
-              {{- end }}
+                limits:
+                  memory: 3G
               env:
                 - name: AKKA_CONFIG
                   value: /config/application.conf
@@ -44,12 +48,12 @@ spec:
                 - name: config
                   mountPath: /config
               command:
-                - timeout
-                - 12h
                 - java
                 - "-Dconfig.file=/config/application.conf"
                 - -jar
                 - /app/akka-loader-assembly-0.1.jar
                 - loadScheduled
                 - --entity
-                - auto
+                - league
+
+

@@ -19,11 +19,11 @@ data:
     database_name = "{{ .Values.loader.clickhouse.database }}"
     hattid_web_url = "http://{{ include "hattid.fullname" . }}-web:9000"
     
-    akka.http.host-connection-pool.response-entity-subscription-timeout = 3.minute
-    akka.stream.materializer.max-input-buffer-size = 512
+    pekko.http.host-connection-pool.response-entity-subscription-timeout = 3.minute
+    pekko.stream.materializer.max-input-buffer-size = 512
     
-    akka.http.host-connection-pool.max-connections = 512
-    akka.http.host-connection-pool.max-open-requests = 512
+    pekko.http.host-connection-pool.max-connections = 512
+    pekko.http.host-connection-pool.max-open-requests = 512
     
     crobox.clickhouse.client {
         connection: {
@@ -77,5 +77,5 @@ data:
         }
     }
     
-    akka.actor.default-dispatcher = ${my-dispatcher}
+    pekko.actor.default-dispatcher = ${my-dispatcher}
 

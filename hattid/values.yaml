@@ -2,7 +2,7 @@ replicaCount: 1
 
 web:
   image:
-    repository: ghcr.io/blackmorse/hat-all-stats/web
+    repository: ghcr.io/blackmorse/hat-all-stats/webzio
     tag: "latest"
   service:
     port: 9000
@@ -15,7 +15,7 @@ loader:
   resources:
     limits:
       memory: "3G"
-  schedule: "44 * * * *"
+  schedule: "27 * * * *"
   clickhouse:
     host: clickhouse-standalone.db.svc
     port: 8123
