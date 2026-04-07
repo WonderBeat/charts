@@ -22,6 +22,10 @@ spec:
       tolerations:
         - operator: Exists
           effect: NoSchedule
+      {{- with $root.Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       containers:
         - name: nebula
           {{- with $root.Values.command }}

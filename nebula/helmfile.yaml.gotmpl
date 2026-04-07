@@ -4,14 +4,22 @@ releases:
     namespace: network
 
     values:
-      - values-client.gotmpl
       # - image: busybox
       # - tag: latest
       # - command:
       #   - sleep
       #   - 20h
       # - args: {}
-
+      - values-client.gotmpl
+      - affinity:
+           nodeAffinity:
+             requiredDuringSchedulingIgnoredDuringExecution:
+               nodeSelectorTerms:
+               - matchExpressions:
+                 - key: kubernetes.io/hostname
+                   operator: NotIn
+                   values:
+                     - xpand # avoid scheduling on xpand
       - common:
           client:
             config:

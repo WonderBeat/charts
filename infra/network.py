@@ -4,7 +4,7 @@ from pyinfra import host
 from pyinfra.operations import apt, files, server
 
 apt.packages(
-    name="Ensure installed",
+    name="Ensure installed common apps",
     packages=["nftables", "mtr", "hping3", "net-tools", "tcpdump"],
     _sudo=True,
 )

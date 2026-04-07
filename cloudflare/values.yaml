@@ -19,3 +19,7 @@ affinity:
               operator: In
               values:
                 - germany
+            - key: topology.kubernetes.io/zone
+              operator: NotIn
+              values:
+                - home

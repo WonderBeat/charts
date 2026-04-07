@@ -1,0 +1,36 @@
+releases:
+  - name: copyparty
+    namespace: copyparty
+    chart: oci://ghcr.io/ernail/charts/copyparty
+    version: 2.0.0
+    values:
+      - image:
+          tag: latest
+      - serviceAccount:
+          enabled: false
+      - resources:
+          requests:
+            memory: "50Mi"
+            ephemeral-storage: "100Mi"
+          limits:
+            memory: "164Mi"
+            ephemeral-storage: "256Mi"
+
+      - volumeConfig:
+          appData:
+            persistence:
+              enabled: true
+              size: "1Gi"
+              storageClass: local-path
+          userData:
+            persistence:
+              enabled: true
+              size: "5Gi"
+              storageClass: local-path
+          copypartyConfig:
+            volume:
+              name: "copyparty-config"
+              configMap:
+                name: "copyparty-config"
+              secret: null
+      - secret.yaml

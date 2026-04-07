@@ -30,9 +30,12 @@ regconf = files.template(
 # )
 
 
-k3s_version_check = host.get_fact(
-    Command,
-    "k3s --version 2>/dev/null | head -1 | awk '{print $3}' || echo 'not_installed'",
+k3s_version_check = (
+    host.get_fact(
+        Command,
+        "k3s --version 2>/dev/null | head -1 | awk '{print $3}' || echo 'not_installed'",
+    )
+    or ""
 ).strip()
 
 k3s_target_version = "v1.33.5+k3s1"
@@ -67,6 +70,7 @@ updated = server.shell(
     _sudo=True,
 )
 
+
 if host.data.get("k8s_master"):
     server.systemd.service(
         name="Restart k3s",
@@ -78,6 +82,22 @@ if host.data.get("k8s_master"):
         _sudo=True,
     )
 else:
+    systemd_unit = files.template(
+        name="Create k3s systemd service",
+        src="templates/k3s.service.j2",
+        dest="/etc/systemd/system/k3s-agent.service",
+        mode="0644",
+        _sudo=True,
+        k8s_master=host.data.get("k8s_master"),
+    )
+
+    server.shell(
+        name="Reload systemd after creating k3s service",
+        commands=["systemctl daemon-reload", "systemctl enable k3s-agent"],
+        _sudo=True,
+        _if=[lambda: systemd_unit.changed],
+    )
+
     server.systemd.service(
         name="Restart k3s",
         service="k3s-agent",

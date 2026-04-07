@@ -5,7 +5,7 @@ releases:
     values:
       - image:
           repository: pihole/pihole
-          tag: 2025.03.0
+          tag: 2026.02.0
 
       - resources:
           limits:

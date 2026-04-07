@@ -36,9 +36,22 @@ releases:
               requests:
                 memory: "50Mi"
       - portal:
-          image:
-            repository: bitnami/harbor-portal
-            tag: 2.13.1
+          affinity:
+            nodeAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                  - matchExpressions:
+                      - key: kubernetes.io/arch
+                        operator: In
+                        values:
+                          - amd64
+                      - key: kubernetes.io/hostname
+                        operator: NotIn
+                        values:
+                          - xpand
+          #image:
+            #repository: bitnami/harbor-portal
+            #tag: 2.13.1
           resources:
             limits:
               memory: "300Mi"
@@ -78,6 +91,10 @@ releases:
                         operator: In
                         values:
                           - amd64
+                      - key: kubernetes.io/hostname
+                        operator: NotIn
+                        values:
+                          - xpand
           replicas: 1
           resources:
             limits:
@@ -94,10 +111,14 @@ releases:
                         operator: In
                         values:
                           - amd64
-          controller:
-            image:
-              repository: bitnami/harbor-registryctl
-              tag: 2.13.1
+                      - key: kubernetes.io/hostname
+                        operator: NotIn
+                        values:
+                          - xpand
+          #controller:
+            #image:
+              #repository: bitnami/harbor-registryctl
+              #tag: 2.13.1
           registry:
             resources:
               limits:

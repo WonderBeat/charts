@@ -4,7 +4,7 @@ image:
   repository: zelbeinstein/cloak
   pullPolicy: Always
   # Overrides the image tag whose default is the chart appVersion.
-  tag: v2.7.0
+  tag: v2.12.0
 
 nameOverride: ""
 fullnameOverride: ""
@@ -58,10 +58,10 @@ affinity:
   nodeAffinity:
     requiredDuringSchedulingIgnoredDuringExecution:
       nodeSelectorTerms:
-      - matchExpressions:
-        - key: kubernetes.io/hostname
-          operator: NotIn
-          values:
-          - jonapot
-          - xpand
-          - vm
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: NotIn
+              values:
+                - jonapot
+                - xpand
+                - vm

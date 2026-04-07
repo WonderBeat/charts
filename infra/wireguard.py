@@ -19,7 +19,7 @@ hostname = host.get_fact(Hostname)
 
 host_ips = host.get_fact(
     Command,
-    "ip -4 -o addr show scope global"
+    "ip -4 -o addr show scope global",
     # Command, "ip -4 -o addr show scope global | awk '{gsub(/\\/.*/," ",$4); print $4}'"
 )
 
@@ -87,8 +87,9 @@ newconf = files.template(
 server.systemd.service(
     name="Restart wireguard",
     service="wg-quick@wg0.service",
-    running=False,
-    restarted=newconf.changed,
+    # running=False,
+    # restarted=newconf.changed,
+    restarted=True,
     enabled=False,
     _sudo=True,
 )

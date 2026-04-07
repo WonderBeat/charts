@@ -3,6 +3,10 @@ releases:
     namespace: network
     chart: ./3xui
     values:
+      - nodePort:
+          enabled: true
+          nodePort: 31443
+
       - affinity:
           nodeAffinity:
             requiredDuringSchedulingIgnoredDuringExecution:
@@ -12,3 +16,29 @@ releases:
                   operator: In
                   values:
                     - nagi
+  - name: 3xui-fallback
+    namespace: network
+    chart: ./3xui
+    values:
+      - nodePort:
+          enabled: true
+          nodePort: 31444
+          additionalPorts: 
+           - port: 444
+             targetPort: 444
+             nodePort: 32443
+             name: reserve
+           - port: 445
+             targetPort: 445
+             nodePort: 32767
+             name: reserve-of-reserve
+
+      - affinity:
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+              - matchExpressions:
+                - key: kubernetes.io/hostname
+                  operator: In
+                  values:
+                    - kesaram
