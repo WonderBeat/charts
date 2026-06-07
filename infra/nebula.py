@@ -71,7 +71,7 @@ if (
                 ARCH_SUFFIX="amd64"
             fi
             echo "Detected architecture: $ARCH_SUFFIX"
-            wget "https://github.com/slackhq/nebula/releases/download/v1.9.7/nebula-linux-${ARCH_SUFFIX}.tar.gz" -O "/tmp/nebula-linux-${ARCH_SUFFIX}.tar.gz"
+            wget "https://github.com/slackhq/nebula/releases/download/v1.10.3/nebula-linux-${ARCH_SUFFIX}.tar.gz" -O "/tmp/nebula-linux-${ARCH_SUFFIX}.tar.gz"
             """
         ],
         _sudo=True,
@@ -121,7 +121,7 @@ if (
         _sudo=True,
     )
 
-files.template(
+config = files.template(
     name="Create Nebula config file",
     src=f"templates/{host.name}.nebula.secret",
     dest="/etc/nebula/config.yaml",
@@ -130,3 +130,12 @@ files.template(
     group="root",
     _sudo=True,
 )
+
+if config.changed:
+    systemd.service(
+        name="Reload Nebula service",
+        service="nebula",
+        running=True,
+        restarted=True,
+        _sudo=True,
+    )

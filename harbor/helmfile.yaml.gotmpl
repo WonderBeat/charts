@@ -18,6 +18,14 @@ releases:
   - name: harbor
     namespace: db
     chart: harbor/harbor
+    strategicMergePatches:
+      - apiVersion: v1
+        kind: ConfigMap
+        metadata:
+          name: harbor-core
+          namespace: db
+        data:
+          CORE_URL: http://harbor-core.db.svc.cluster.local
     values:
       - database:
           internal:
@@ -56,10 +64,17 @@ releases:
             limits:
               memory: "300Mi"
             requests:
-              memory: "50Mi"
+              memory: "20Mi"
       - core:
           replicas: 2
           affinity:
+            podAntiAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                - labelSelector:
+                    matchLabels:
+                      app: harbor
+                      component: core
+                  topologyKey: kubernetes.io/hostname
             nodeAffinity:
               requiredDuringSchedulingIgnoredDuringExecution:
                 nodeSelectorTerms:
@@ -68,10 +83,6 @@ releases:
                         operator: In
                         values:
                           - amd64
-                      - key: kubernetes.io/hostname
-                        operator: NotIn
-                        values:
-                          - xpand
           resources:
             limits:
               memory: "300Mi"
@@ -91,10 +102,6 @@ releases:
                         operator: In
                         values:
                           - amd64
-                      - key: kubernetes.io/hostname
-                        operator: NotIn
-                        values:
-                          - xpand
           replicas: 1
           resources:
             limits:

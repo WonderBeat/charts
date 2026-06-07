@@ -10,7 +10,11 @@ releases:
     namespace: db
     createNamespace: true
     chart: bitnami/postgresql
+    version: 16.7.27
     values:
+      - image:
+          repository: bitnamilegacy/postgresql
+          tag: 16.6.0
       - primary:
           resources:
             requests:
@@ -30,9 +34,14 @@ releases:
   - name: coder
     namespace: coder
     createNamespace: true
+    needs:
+      - db/coder-db
     chart: coder-v2/coder
     values:
       - coder:
+          resources:
+            memory: 
+              requests: 100Mi
           # image:
           #   tag: v2.10.2
           env:
@@ -71,7 +80,7 @@ releases:
             name: coder-pod-creator
           rules:
           - apiGroups: [""]
-            resources: ["pods", "secrets", "pods/exec", "deployments", "services", "pods/portforward"]
+            resources: ["pods", "secrets", "pods/exec", "services", "pods/portforward"]
             verbs: ["create", "get", "watch", "list", "delete", "update"]
           - apiGroups: [""]
             resources: ["pods/log"]

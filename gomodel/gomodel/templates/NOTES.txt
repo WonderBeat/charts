@@ -1,0 +1,16 @@
+GoModel LLM gateway is deployed.
+
+Access the API within the cluster:
+  http://{{ include "gomodel.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.service.port }}
+
+Endpoints:
+  /v1/chat/completions  — OpenAI-compatible chat
+  /v1/models            — list configured models (or aliases if KEEP_ONLY_ALIASES_AT_MODELS_ENDPOINT=true)
+  /health               — health check
+  /admin/dashboard      — admin UI for managing aliases, usage, model overrides
+
+Model aliases (set via admin dashboard or admin API):
+  POST /admin/api/v1/aliases  — create alias (e.g. "code-local" -> "lm-studio/qwen3.6-...")
+  GET  /admin/api/v1/aliases  — list aliases
+
+Master key is set in config — pass it as: Authorization: Bearer <master_key>

@@ -1,0 +1,89 @@
+# helm install kyverno kyverno/kyverno -n kyverno --create-namespace --set replicaCount=1
+repositories:
+  - name: kyverno
+    url: https://kyverno.github.io/kyverno
+  - name: incubator
+    url: https://charts.helm.sh/incubator
+releases:
+  - name: kyverno
+    namespace: kyverno
+    chart: kyverno/kyverno
+    version: 3.3.3
+    values:
+      - config:
+          webhooks:
+              namespaceSelector:
+                matchExpressions:
+                - key: kubernetes.io/metadata.name
+                  operator: NotIn
+                  values:
+                    - kyverno
+      - admissionController:
+          replicas: 1
+      - backgroundController:
+          enabled: true
+          serviceMonitor:
+            interval: 100s
+            scrapeTimeout: 77s
+      - cleanupController:
+          enabled: false
+      - reportsController:
+          enabled: false
+      - features:
+          # admissionReports:
+          #   enabled: false
+          aggregateReports:
+            enabled: false
+          # policyReports:
+          #   enabled: false
+          validatingAdmissionPolicyReports:
+            enabled: false
+  - name: kyverno-policies
+    namespace: kyverno
+    chart: incubator/raw
+    needs:
+      - kyverno/kyverno
+    values:
+      - resources:
+          - apiVersion: rbac.authorization.k8s.io/v1
+            kind: ClusterRole
+            metadata:
+              labels:
+                rbac.kyverno.io/aggregate-to-admission-controller: "true"
+              name: kyverno:update-deployments
+            rules:
+              - apiGroups:
+                - apps
+                resources:
+                - deployments
+                verbs:
+                  - watch
+                  - list
+                  - get
+                  - update
+          - apiVersion: kyverno.io/v1
+            kind: ClusterPolicy
+            metadata:
+              name: enforce-k3s-coredns-replicas
+              annotations:
+                policies.kyverno.io/title: k3s coredns has no replicas. We add it
+                policies.kyverno.io/subject: Deployment
+                policies.kyverno.io/category: Other
+                policies.kyverno.io/description: >-
+                  CoreDNS replicas enforcing rule
+            spec:
+              rules:
+                - name: enforce-dns-replicas
+                  match:
+                    any:
+                      - resources:
+                          kinds:
+                            - Deployment
+                          names:
+                            - "coredns"
+                          namespaces:
+                            - kube-system
+                  mutate:
+                    patchStrategicMerge:
+                      spec:
+                        replicas: 2

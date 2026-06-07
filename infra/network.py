@@ -30,6 +30,16 @@ server.systemd.service(
     _sudo=True,
 )
 
+# server.systemd.service(
+#     name="Restart k3s",
+#     service="k3s",
+#     daemon_reload=new_conf.changed,
+#     running=True,
+#     restarted=new_conf.changed,
+#     enabled=True,
+#     _sudo=True,
+# )
+
 server.sysctl(
     "net.ipv4.tcp_rmem",
     "10240 187380 12582912",

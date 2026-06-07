@@ -5,7 +5,7 @@ releases:
     values:
       - image:
           repository: pihole/pihole
-          tag: 2026.02.0
+          tag: 2026.05.0
 
       - resources:
           limits:
@@ -14,7 +14,9 @@ releases:
             memory: 90Mi
 
       - config: |
+          server=/lan.thehumanoid.ai/172.31.0.2
           server=/stage.san/10.88.101.1#55
+          server=/eu-west-2.rds.amazonaws.com/10.88.101.1#55
           server=/production.san/10.88.101.1#55
           server=/internal.san/10.88.101.1#55
           server=/cluster.local/10.88.101.1#55

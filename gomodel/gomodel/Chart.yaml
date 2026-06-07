@@ -1,0 +1,9 @@
+apiVersion: v2
+name: gomodel
+description: GoModel — lightweight Go-based LLM gateway with model aliasing
+
+type: application
+
+version: 0.1.0
+
+appVersion: "0.1.25"

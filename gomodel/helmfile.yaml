@@ -1,0 +1,6 @@
+releases:
+  - name: gomodel
+    chart: ./gomodel
+    namespace: default
+    values:
+      - secret.yaml
