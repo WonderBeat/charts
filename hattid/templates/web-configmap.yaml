@@ -11,6 +11,11 @@ data:
       accessTokenSecret = "{{ .Values.hattrick_secrets.accessTokenSecret }}"
     }
 
+    ho {
+      customerKey = "{{ .Values.hattrick_secrets.hoCustomerKey }}"
+      customerSecret = "{{ .Values.hattrick_secrets.hoCustomerSecret }}"
+    }
+
     db.default.driver = ru.yandex.clickhouse.ClickHouseDriver
     db.default.url = "{{ .Values.web.dbUrl }}"
     db.default.logStatements=true

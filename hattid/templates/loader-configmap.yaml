@@ -17,7 +17,7 @@ data:
     }
     
     database_name = "{{ .Values.loader.clickhouse.database }}"
-    hattid_web_url = "http://{{ include "hattid.fullname" . }}-web:9000"
+    hattid_web_url = "http://{{ include "hattid.fullname" . }}-web:9000/api"
     
     pekko.http.host-connection-pool.response-entity-subscription-timeout = 3.minute
     pekko.stream.materializer.max-input-buffer-size = 512

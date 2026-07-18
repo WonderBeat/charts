@@ -6,7 +6,7 @@ web:
     tag: "latest"
   service:
     port: 9000
-  dbUrl: "jdbc:clickhouse://clickhouse-standalone.db.svc:8123"
+  dbUrl: "jdbc:clickhouse://clickhouse-arm.db.svc:8123"
 
 loader:
   image:
@@ -15,9 +15,9 @@ loader:
   resources:
     limits:
       memory: "3G"
-  schedule: "27 * * * *"
+  schedule: "52 * * * *"
   clickhouse:
-    host: clickhouse-standalone.db.svc
+    host: clickhouse-arm.db.svc
     port: 8123
     user: default
     database: hattrick
