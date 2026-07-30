@@ -53,13 +53,18 @@ releases:
                         operator: In
                         values:
                           - amd64
+                      # Previously excluded both xpand and jonapot, which left
+                      # k8s-2 as the only eligible node. k8s-2 is cordoned for
+                      # maintenance, so portal was unschedulable. jonapot stays
+                      # excluded (979Mi node, already ~95% memory limits), so
+                      # this now permits xpand.
                       - key: kubernetes.io/hostname
                         operator: NotIn
                         values:
-                          - xpand
-          #image:
-            #repository: bitnami/harbor-portal
-            #tag: 2.13.1
+                          - jonapot
+          image:
+            repository: goharbor/harbor-portal
+            tag: dev
           resources:
             limits:
               memory: "300Mi"
@@ -67,6 +72,9 @@ releases:
               memory: "20Mi"
       - core:
           replicas: 2
+          image:
+            repository: goharbor/harbor-core
+            tag: dev
           affinity:
             podAntiAffinity:
               requiredDuringSchedulingIgnoredDuringExecution:
@@ -78,11 +86,21 @@ releases:
             nodeAffinity:
               requiredDuringSchedulingIgnoredDuringExecution:
                 nodeSelectorTerms:
+                  # The "- matchExpressions:" wrapper below was missing, so these
+                  # keys parsed as a bare list item and Helm rendered the whole
+                  # term as [{}]. An empty nodeSelectorTerm matches NO node, so
+                  # every new core pod sat Pending with
+                  # "8 node(s) didn't match Pod's node affinity/selector".
                   - matchExpressions:
                       - key: kubernetes.io/arch
                         operator: In
                         values:
                           - amd64
+                      # jonapot is a 979Mi node already at ~95% memory limits.
+                      - key: kubernetes.io/hostname
+                        operator: NotIn
+                        values:
+                          - jonapot
           resources:
             limits:
               memory: "300Mi"
