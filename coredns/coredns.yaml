@@ -85,8 +85,15 @@ data:
     .:5301 {
         forward . 10.46.214.145
     }
+    # Fallback upstream, used only when pihole (:5301) is unreachable.
+    #
+    # Previously "forward . /etc/resolv.conf", which inherited the node's
+    # resolv.conf. On these Oracle nodes DHCP injects the non-existent search
+    # domain "k8spublic.oraclevcn.com", so CoreDNS's fallback depended on
+    # per-node cloud config that differs across the 9 nodes. Pinning explicit
+    # resolvers makes this deterministic and node-independent.
     .:5302 {
-        forward . /etc/resolv.conf
+        forward . 1.1.1.1 1.0.0.1
     }
     #import /etc/coredns/custom/*.server
 ---
