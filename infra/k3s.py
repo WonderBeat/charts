@@ -22,6 +22,18 @@ regconf = files.template(
     _sudo=True,
 )
 
+# resolv.conf handed to kubelet via --resolv-conf (see kube-arg in *.k3s.secret).
+# Exists so pods do not inherit the cloud DHCP "search" domain, which is a
+# broken zone that returns SERVFAIL and breaks DNS in musl-based images.
+# See the header comment in templates/resolv.conf for the full analysis.
+resolvconf = files.put(
+    name="Copy kubelet resolv.conf (no DHCP search domain)",
+    src="templates/resolv.conf",
+    dest="/etc/rancher/k3s/resolv.conf",
+    mode=644,
+    _sudo=True,
+)
+
 # _ = server.shell(
 #     name="drop caches",
 #     commands=["crictl rmi --prune"],
@@ -75,9 +87,15 @@ if host.data.get("k8s_master"):
     server.systemd.service(
         name="Restart k3s",
         service="k3s",
-        daemon_reload=newconf.changed or regconf.changed or updated.changed,
+        daemon_reload=newconf.changed
+        or regconf.changed
+        or resolvconf.changed
+        or updated.changed,
         running=True,
-        restarted=newconf.changed or regconf.changed or updated.changed,
+        restarted=newconf.changed
+        or regconf.changed
+        or resolvconf.changed
+        or updated.changed,
         enabled=True,
         _sudo=True,
     )
@@ -101,9 +119,15 @@ else:
     server.systemd.service(
         name="Restart k3s",
         service="k3s-agent",
-        daemon_reload=newconf.changed or regconf.changed or updated.changed,
+        daemon_reload=newconf.changed
+        or regconf.changed
+        or resolvconf.changed
+        or updated.changed,
         running=True,
-        restarted=newconf.changed or regconf.changed or updated.changed,
+        restarted=newconf.changed
+        or regconf.changed
+        or resolvconf.changed
+        or updated.changed,
         enabled=True,
         _sudo=True,
     )
