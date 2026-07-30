@@ -5,7 +5,7 @@ releases:
     values:
       - image:
           repository: pihole/pihole
-          tag: 2026.05.0
+          tag: 2026.07.2
 
       - resources:
           limits:
@@ -37,3 +37,11 @@ releases:
             value: ""
           - name: FTLCONF_misc_etc_dnsmasq_d
             value: "true"
+          # Cap long-term query-log retention. FTL defaults to 365 days, which
+          # had grown /etc/pihole/pihole-FTL.db to 909MB. FTL mmaps that file
+          # and replays it into memory on every startup (150k+ queries), so the
+          # container sat at 249.4Mi of its 250Mi limit (99.8%) and had hit the
+          # cgroup ceiling 21 times. Actual process memory is only ~55Mi; the
+          # rest was page cache from the oversized database.
+          - name: FTLCONF_database_maxDBdays
+            value: "15"
