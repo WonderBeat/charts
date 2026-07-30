@@ -21,6 +21,15 @@ releases:
                 memory: 400Mi
             limits:
                 memory: 600Mi
+          # Was zone=germany, which pinned this to k8s-2 (the only germany node).
+          # k8s-2 has been cordoned for maintenance, so the pod could not be
+          # scheduled. Allow the oracle zones (kesaram, nagi, jonapot) and
+          # oracle_eu_andrey (oracle1/2/3) instead.
+          #
+          # NOTE: storageClass is local-path, so the PV is pinned to whichever
+          # node first binds it. Moving nodes therefore requires a data
+          # migration (pg_dump/restore), not just a reschedule. Consider a
+          # replicated storage class if this needs to move freely.
           affinity:
             nodeAffinity:
               requiredDuringSchedulingIgnoredDuringExecution:
@@ -29,7 +38,8 @@ releases:
                   - key: topology.kubernetes.io/zone
                     operator: In
                     values:
-                      - germany
+                      - oracle
+                      - oracle_eu_andrey
       - secret.yaml
   - name: coder
     namespace: coder
