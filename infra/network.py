@@ -30,15 +30,15 @@ server.systemd.service(
     _sudo=True,
 )
 
-# server.systemd.service(
-#     name="Restart k3s",
-#     service="k3s",
-#     daemon_reload=new_conf.changed,
-#     running=True,
-#     restarted=new_conf.changed,
-#     enabled=True,
-#     _sudo=True,
-# )
+server.systemd.service(
+    name="Restart k3s",
+    service="k3s-agent",
+    daemon_reload=new_conf.changed,
+    running=True,
+    restarted=new_conf.changed,
+    enabled=True,
+    _sudo=True,
+)
 
 server.sysctl(
     "net.ipv4.tcp_rmem",
@@ -58,6 +58,22 @@ server.sysctl(
 
 server.sysctl(
     "net.core.wmem_max",
+    "12582912",
+    persist=True,
+    persist_file="/etc/sysctl.conf",
+    _sudo=True,
+)
+
+# net.core.rmem_max was missing while wmem_max was set, so the receive side
+# stayed at the 212992-byte kernel default. That default caps UDP/QUIC socket
+# buffers, which is why cloudflared logs:
+#   "failed to sufficiently increase receive buffer size
+#    (was: 208 kiB, wanted: 7168 kiB, got: 416 kiB)"
+# 208 kiB is exactly the 212992-byte default. A small receive buffer limits the
+# QUIC congestion window and throttles tunnel throughput to the Cloudflare edge.
+# Matches wmem_max so send/receive limits are symmetric.
+server.sysctl(
+    "net.core.rmem_max",
     "12582912",
     persist=True,
     persist_file="/etc/sysctl.conf",
