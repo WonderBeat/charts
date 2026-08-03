@@ -3,13 +3,6 @@ image:
   tag: 2026.7.2
   #pullPolicy: Always
 
-# One cloudflared pod means every request for every hostname on this tunnel
-# funnels through a single origin process. Two replicas double the edge
-# connections and let Cloudflare load balance across them, which removes
-# head-of-line contention between noisy hostnames (e.g. ai.gladiators.dev
-# LLM streams) and the Coder UI.
-replicaCount: 2
-
 # NOTE: cloudflared logs "failed to sufficiently increase receive buffer size
 # (was: 208 kiB, wanted: 7168 kiB, got: 416 kiB)" because net.core.rmem_max is
 # low on the node. That is a node-level, non-namespaced sysctl and deliberately
@@ -17,25 +10,23 @@ replicaCount: 2
 # other pod on the host. If it needs raising, do it in node provisioning
 # (/etc/sysctl.d) so the change is explicit and owned by the node config.
 
-# Extra flags passed to `cloudflared tunnel`.
-#
 # NOTE: this tunnel is remotely managed (ingress rules come from the Zero Trust
 # dashboard, see "Updated to new configuration" in the pod logs). The
-# --proxy-* origin flags only take effect with a local `--url` origin, so
-# per-origin tuning must be set in the dashboard under the hostname's
-# originRequest instead. For coder.gladiators.dev the useful settings are:
+# cloudflared --proxy-* origin flags only take effect with a local `--url`
+# origin, so there is no point adding them here: per-origin tuning must be set
+# in the dashboard under the hostname's originRequest. For coder.gladiators.dev
+# the useful settings are:
 #   http2Origin: true          (multiplex the SPA's ~150 asset requests)
 #   keepAliveConnections: 200  (default 100, shared across all hostnames)
 #   keepAliveTimeout: 90
 # photos.gladiators.dev already does this; coder.gladiators.dev has an empty
 # originRequest today, so it inherits the shared defaults.
-extraArgs: []
 
 resources:
   limits:
-    memory: 256Mi
+    memory: 120Mi
   requests:
-    cpu: 100m
+    cpu: 10m
     memory: 50Mi
 
 affinity:

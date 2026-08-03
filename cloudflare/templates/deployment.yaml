@@ -8,7 +8,7 @@ metadata:
     app.kubernetes.io/instance: {{ .Release.Name }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
 spec:
-  replicas: {{ .Values.replicaCount | default 1 }}
+  replicas: 1
   selector:
     matchLabels:
       app.kubernetes.io/name: {{ include "argo.name" . }}
@@ -31,15 +31,7 @@ spec:
         - name: argo-tunnel
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy | default "IfNotPresent" }}
-          args:
-            - tunnel
-            - --no-autoupdate
-{{- range .Values.extraArgs }}
-            - {{ . | quote }}
-{{- end }}
-            - run
-            - --token
-            - $(TOKEN)
+          args: ["tunnel", "--no-autoupdate", "run", "--token", "$(TOKEN)"]
 {{- if .Values.resources }}
           resources:
 {{ toYaml .Values.resources | indent 12}}
@@ -49,3 +41,4 @@ spec:
               name: {{ include "argo.name" . }}-secret
       restartPolicy: Always
       terminationGracePeriodSeconds: 60
+
