@@ -1,0 +1,125 @@
+replicaCount: 1
+
+nameOverride: ""
+# Pod names will be dego-dev-throwaway-0
+fullnameOverride: "dego-dev-throwaway"
+
+image:
+  repository: ghcr.io/ggml-org/llama.cpp
+  tag: "server-cuda"
+  pullPolicy: IfNotPresent
+
+server:
+  host: "0.0.0.0"
+  port: 8080
+  # Unsloth dynamic quant. The ':UD-IQ4_XS' tag makes llama.cpp resolve and
+  # fetch all 4 splits (00001..00004-of-00004, 127.3 GiB total) on its own, so
+  # modelFile must stay empty: pinning one shard would defeat split resolution.
+  model: "unsloth/DeepSeek-V4-Flash-0731-GGUF:UD-IQ4_XS"
+  modelFile: ""
+  # 127.3 GiB of weights cannot fit in one 80 GiB H100. Attention + shared
+  # experts stay on GPU, routed expert banks spill to host RAM via cpuMoeLayers.
+  gpuLayers: "all"
+  # Keep the routed-expert banks of the first N of 43 layers in CPU RAM.
+  # ~2.7 GiB of experts per layer, so 24 layers sheds ~62 GiB and leaves
+  # headroom on the GPU for the KV cache and compute buffers.
+  # Lower this if VRAM allows (faster); raise it on CUDA OOM at startup.
+  cpuMoeLayers: 24
+  # Set via helmfile (secret.yaml)
+  apiKey: ""
+  extraArgs:
+    # Recommended sampling for this model (agentic scenarios)
+    - "--temp"
+    - "1.0"
+    - "--top-p"
+    - "0.95"
+    # Anti-degeneration guard. Defaults are repeat_penalty=1.0 (off) with
+    # repeat_last_n=64, which let the previous 2-bit build emit unbounded
+    # "#I #I #I" runs. A light penalty over a wider window breaks those loops
+    # without flattening legitimate repetition in code output.
+    - "--repeat-penalty"
+    - "1.05"
+    - "--repeat-last-n"
+    - "256"
+    # Proper chat template + tool calling for agentic use
+    - "--jinja"
+    # 2 clients x 128k tokens. The model declares a 1M training context, but 1M
+    # per slot only ever fit on paper: real traffic peaked near 111k tokens
+    # while VRAM sat at 98.7%. 128k covers observed load with room to spare.
+    - "-c"
+    - "262144"
+    - "--parallel"
+    - "2"
+    - "--flash-attn"
+    - "on"
+    # KV stays f16. Quantizing it saves VRAM that a 128k context no longer
+    # needs, and q8_0 KV on MLA attention compounds weight quantization error.
+    - "--cache-type-k"
+    - "f16"
+    - "--cache-type-v"
+    - "f16"
+    # NOTE: --cache-reuse is intentionally absent. MLA/DeepSeek contexts do not
+    # support the KV shifting it needs, and llama.cpp logged
+    # "cache_reuse is not supported by this context, it will be disabled".
+    # Faster prompt processing on H100
+    - "-b"
+    - "4096"
+    - "-ub"
+    - "2048"
+    # Read weights into RAM instead of mmap'ing them. Expert tensors resident in
+    # host RAM are hit on every token, so page-fault latency is not amortized.
+    # (Replaces the deprecated --no-mmap.)
+    - "--load-mode"
+    - "none"
+    # The repo ships a 'dspark' speculative drafter. Pin this off so a future
+    # llama.cpp default cannot silently claim VRAM we have not budgeted for.
+    - "--spec-type"
+    - "none"
+    # Prometheus /metrics endpoint
+    - "--metrics"
+
+sidecar:
+  image:
+    repository: alpine
+    tag: "3.20"
+    pullPolicy: IfNotPresent
+  downloadUrl: "https://github.com/cablehead/pai-sho/releases/download/v0.3.0/pai-sho-v0.3.0-linux-amd64.tar.gz"
+  # Set via helmfile (secret.yaml)
+  ticket: ""
+  # One-time enroll token (valid 5 minutes), set via helmfile
+  enrollToken: ""
+  # Ports pai-sho exposes, comma separated. Defaults to the server port.
+  exposePorts: "8080"
+  resources: {}
+
+scheduling:
+  schedulerName: volcano
+  queue: default
+  priorityClassName: data-processing-priority
+
+podAnnotations: {}
+podSecurityContext: {}
+securityContext: {}
+
+resources:
+  requests:
+    # Routed experts now run as CPU GEMMs on the critical path for every token.
+    # The old 50m request would have made that pathologically slow.
+    cpu: 16
+    # ~62 GiB of CPU-resident experts plus loader and runtime overhead.
+    memory: 80Gi
+    nvidia.com/gpu: 1
+  limits:
+    # no CPU limit on purpose
+    memory: 110Gi
+    nvidia.com/gpu: 1
+
+persistence:
+  storageClass: local-path
+  # 127.3 GiB of weights, leaving room for a future quant swap without a resize.
+  size: 300Gi
+  mountPath: /cache
+
+nodeSelector: {}
+tolerations: []
+affinity: {}

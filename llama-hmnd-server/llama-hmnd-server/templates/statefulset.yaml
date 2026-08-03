@@ -1,0 +1,158 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "llama-hmnd-server.fullname" . }}
+  labels:
+    {{- include "llama-hmnd-server.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  serviceName: {{ include "llama-hmnd-server.fullname" . }}
+  selector:
+    matchLabels:
+      {{- include "llama-hmnd-server.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        scheduling.volcano.sh/queue-name: {{ .Values.scheduling.queue | quote }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "llama-hmnd-server.selectorLabels" . | nindent 8 }}
+    spec:
+      schedulerName: {{ .Values.scheduling.schedulerName }}
+      {{- with .Values.scheduling.priorityClassName }}
+      priorityClassName: {{ . }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: server
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+            - --host
+            - {{ .Values.server.host | quote }}
+            - --port
+            - {{ .Values.server.port | quote }}
+            - -hf
+            - {{ .Values.server.model | quote }}
+            {{- with .Values.server.modelFile }}
+            - --hf-file
+            - {{ . | quote }}
+            {{- end }}
+            - --n-gpu-layers
+            - {{ .Values.server.gpuLayers | quote }}
+            {{- if .Values.server.cpuMoeLayers }}
+            - --n-cpu-moe
+            - {{ .Values.server.cpuMoeLayers | quote }}
+            {{- end }}
+            {{- range .Values.server.extraArgs }}
+            - {{ . | quote }}
+            {{- end }}
+          env:
+            - name: LLAMA_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "llama-hmnd-server.fullname" . }}
+                  key: api-key
+            - name: LLAMA_CACHE
+              value: {{ .Values.persistence.mountPath | quote }}
+            - name: HF_HOME
+              value: {{ .Values.persistence.mountPath | quote }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.server.port }}
+              protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            # 127.3 GiB has to be downloaded, then read into RAM, before /health
+            # answers. 480 x 30s = 4h of headroom for a cold PVC.
+            failureThreshold: 480
+          volumeMounts:
+            - name: cache
+              mountPath: {{ .Values.persistence.mountPath }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+        - name: tunnel
+          image: "{{ .Values.sidecar.image.repository }}:{{ .Values.sidecar.image.tag }}"
+          imagePullPolicy: {{ .Values.sidecar.image.pullPolicy }}
+          command:
+            - sh
+            - -c
+            - |
+              set -eu
+              wget -qO /tmp/pai-sho.tar.gz "$PAI_SHO_URL"
+              tar -xzf /tmp/pai-sho.tar.gz -C /usr/local/bin --strip-components=1
+              chmod +x /usr/local/bin/pai-sho
+              while true; do
+                pai-sho daemon --host 0.0.0.0 -a "$PAI_SHO_TICKET" \
+                  -e "$PAI_SHO_EXPOSE" \
+                  ${PAI_SHO_ENROLL_TOKEN:+--enroll "$PAI_SHO_ENROLL_TOKEN"} || true
+                echo "pai-sho exited, restarting in 5s..."
+                sleep 5
+              done
+          env:
+            - name: PAI_SHO_URL
+              value: {{ .Values.sidecar.downloadUrl | quote }}
+            - name: PAI_SHO_EXPOSE
+              value: {{ .Values.sidecar.exposePorts | default .Values.server.port | quote }}
+            - name: PAI_SHO_TICKET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "llama-hmnd-server.fullname" . }}
+                  key: ticket
+            - name: PAI_SHO_ENROLL_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "llama-hmnd-server.fullname" . }}
+                  key: enroll-token
+                  optional: true
+          volumeMounts:
+            - name: pai-sho-state
+              mountPath: /root/.local/state/pai-sho
+          {{- with .Values.sidecar.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+  volumeClaimTemplates:
+    - metadata:
+        name: cache
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        {{- with .Values.persistence.storageClass }}
+        storageClassName: {{ . }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.persistence.size }}
+    - metadata:
+        name: pai-sho-state
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        {{- with .Values.persistence.storageClass }}
+        storageClassName: {{ . }}
+        {{- end }}
+        resources:
+          requests:
+            storage: 1Mi

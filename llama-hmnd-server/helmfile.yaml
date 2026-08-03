@@ -1,0 +1,6 @@
+releases:
+  - name: dego-dev
+    chart: ./llama-hmnd-server
+    namespace: default
+    values:
+      - secret.yaml

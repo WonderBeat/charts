@@ -14,3 +14,9 @@ webdav
 *.class
 *.zip
 .krew
+
+# OIDC secrets
+oidc/secrets.yaml
+
+# llama server secrets (api key + pai-sho ticket)
+llama-hmnd-server/secret.yaml
