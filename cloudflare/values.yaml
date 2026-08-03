@@ -1,13 +1,42 @@
 image:
   repository: cloudflare/cloudflared
-  tag: latest
-  pullPolicy: Always
+  tag: 2026.7.2
+  #pullPolicy: Always
+
+# One cloudflared pod means every request for every hostname on this tunnel
+# funnels through a single origin process. Two replicas double the edge
+# connections and let Cloudflare load balance across them, which removes
+# head-of-line contention between noisy hostnames (e.g. ai.gladiators.dev
+# LLM streams) and the Coder UI.
+replicaCount: 2
+
+# Raise the node UDP socket buffers so cloudflared's QUIC transport can use a
+# full congestion window. Without this it warns that it only got 416 KiB of
+# the 7 MiB it wants. Set enabled=false if the node forbids privileged pods.
+quicBufferFix:
+  enabled: true
+  rmemMax: "7500000"
+  wmemMax: "7500000"
+
+# Extra flags passed to `cloudflared tunnel`.
+#
+# NOTE: this tunnel is remotely managed (ingress rules come from the Zero Trust
+# dashboard, see "Updated to new configuration" in the pod logs). The
+# --proxy-* origin flags only take effect with a local `--url` origin, so
+# per-origin tuning must be set in the dashboard under the hostname's
+# originRequest instead. For coder.gladiators.dev the useful settings are:
+#   http2Origin: true          (multiplex the SPA's ~150 asset requests)
+#   keepAliveConnections: 200  (default 100, shared across all hostnames)
+#   keepAliveTimeout: 90
+# photos.gladiators.dev already does this; coder.gladiators.dev has an empty
+# originRequest today, so it inherits the shared defaults.
+extraArgs: []
 
 resources:
   limits:
-    memory: 120Mi
+    memory: 256Mi
   requests:
-    cpu: 10m
+    cpu: 100m
     memory: 50Mi
 
 affinity:

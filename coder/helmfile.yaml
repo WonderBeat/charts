@@ -49,14 +49,36 @@ releases:
     chart: coder-v2/coder
     values:
       - coder:
+          # NOTE: this block used to be
+          #     resources:
+          #       memory:
+          #         requests: 100Mi
+          # which is not the k8s ResourceRequirements schema, so Helm rendered
+          # `resources: {}` and the pod ran as BestEffort QoS with no CPU
+          # request at all. Under node pressure the scheduler/CFS gave coderd
+          # whatever was left over, which shows up as a laggy web UI (the SPA
+          # fires ~150 module + API requests on load, and each one waits on
+          # coderd CPU). Real requests/limits below.
           resources:
-            memory: 
-              requests: 100Mi
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              memory: 1Gi
           # image:
           #   tag: v2.10.2
           env:
             # - name: CODER_DERP_SERVER_ENABLE
             #   value: "false"
+
+            # WebGL terminal renderer is noticeably faster than the default
+            # canvas renderer, especially over a high-latency tunnel.
+            - name: CODER_WEB_TERMINAL_RENDERER
+              value: "webgl"
+            # Serve /metrics so UI slowness can actually be measured
+            # (coderd_api_request_latencies_seconds) instead of guessed at.
+            - name: CODER_PROMETHEUS_ENABLE
+              value: "true"
             - name: CODER_PG_CONNECTION_URL
               valueFrom:
                 secretKeyRef:
