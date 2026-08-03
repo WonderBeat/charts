@@ -27,33 +27,6 @@ spec:
       affinity:
 {{ toYaml .Values.affinity | indent 8 }}
 {{- end }}
-{{- if .Values.quicBufferFix.enabled }}
-      # cloudflared logs:
-      #   "failed to sufficiently increase receive buffer size
-      #    (was: 208 kiB, wanted: 7168 kiB, got: 416 kiB)"
-      # A 416 KiB UDP receive buffer caps the QUIC congestion window, which
-      # throttles per-connection throughput to the Cloudflare edge and shows
-      # up as slow page loads for asset-heavy origins (e.g. the Coder SPA).
-      # net.core.rmem_max is a node-level (non-namespaced) sysctl, so it must
-      # be raised via a privileged init container rather than pod securityContext.
-      initContainers:
-        - name: quic-buffer-fix
-          image: busybox:1.37
-          command:
-            - sh
-            - -c
-            - |
-              sysctl -w net.core.rmem_max={{ .Values.quicBufferFix.rmemMax }}
-              sysctl -w net.core.wmem_max={{ .Values.quicBufferFix.wmemMax }}
-          securityContext:
-            privileged: true
-          resources:
-            requests:
-              cpu: 10m
-              memory: 16Mi
-            limits:
-              memory: 32Mi
-{{- end }}
       containers:
         - name: argo-tunnel
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
