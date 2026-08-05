@@ -21,16 +21,16 @@ server:
   # experts stay on GPU, routed expert banks spill to host RAM via cpuMoeLayers.
   gpuLayers: "all"
   # Keep the routed-expert banks of the first N of 43 layers in CPU RAM.
-  # ~2.7 GiB of experts per layer, so 24 layers sheds ~62 GiB and leaves
+  # ~2.6 GiB of experts per layer, so 20 layers sheds ~52 GiB and leaves
   # headroom on the GPU for the KV cache and compute buffers.
   # Lower this if VRAM allows (faster); raise it on CUDA OOM at startup.
   #
-  # Raised 24 -> 25 to buy ~2.7 GiB of VRAM headroom for the third KV slot
-  # below. Measured before the change: 67555 / 81559 MiB used, so only 13.7 GiB
-  # was free and 3 x 131072 of KV needs 32.3 GiB against the 21.5 GiB already
-  # allocated. That left under 3 GiB of margin, which is too thin to survive a
-  # future image bump; one more offloaded layer restores it.
-  cpuMoeLayers: 25
+  # 25 -> 20: dropping --parallel 3 -> 2 (below) frees one 131072-token slot,
+  # i.e. 10.75 GiB of KV, which is spent here instead. Measured at ncmoe 25 /
+  # parallel 3: 65127 / 81559 MiB used, so 16.0 GiB free; reclaiming the slot
+  # gives ~26.8 GiB, and 5 layers back on GPU costs ~12.9 GiB, leaving ~13.9
+  # GiB of margin. Each further layer moved to GPU is ~2.6 GiB of that margin.
+  cpuMoeLayers: 20
   # Set via helmfile (secret.yaml)
   apiKey: ""
   extraArgs:
@@ -83,9 +83,14 @@ server:
     - "--reasoning-format"
     - "deepseek"
     # NOTE: -c is the TOTAL KV pool, divided across --parallel slots, so the
-    # advertised per-request context is -c / --parallel. 131072 per slot x 3
-    # slots = 393216 total. Raising slot count therefore costs VRAM here,
-    # unlike the earlier 2->1 change which was VRAM-neutral at a fixed -c.
+    # advertised per-request context is -c / --parallel. 131072 per slot x 2
+    # slots = 262144 total. Raising slot count therefore costs VRAM here.
+    #
+    # Held at 2 slots rather than 3 for throughput, not just VRAM: slots share
+    # one GPU, and the log showed a decoding slot collapsing from ~23 t/s to
+    # 0.20 t/s while another slot ran prompt eval. A third slot mostly adds
+    # queueing and starvation. Solo decode measured 23.4 t/s; a 3-slot
+    # contended read of the same workload measured 11.2 t/s.
     #
     # 131072 per slot was measured NOT to be the cause of long-context
     # degeneration: the pod ran 2 x 131072 for 2d and still looped, so context
@@ -100,9 +105,9 @@ server:
     # Slot count is the knob here, not VRAM: KV is sized from -c, so going from
     # 2 slots to 1 is VRAM-neutral. It trades concurrency for usable context.
     - "-c"
-    - "393216"
+    - "262144"
     - "--parallel"
-    - "3"
+    - "2"
     # Make context overflow a loud 400 instead of silent corruption. Context
     # shift on MLA/DeepSeek rewrites positions in a way this architecture does
     # not support, and its failure mode is fluent-but-looping text, which is
@@ -118,10 +123,10 @@ server:
     # 96 GiB here is cheap and turns those evictions into cache hits.
     - "--cache-ram"
     - "98304"
-    # KV stays f16. At 393216 total the KV pool is 32.3 GiB, which fits, and q8_0 KV
+    # KV stays f16. At 262144 total the KV pool is 21.5 GiB, which fits, and q8_0 KV
     # on MLA attention compounds weight quantization error. If context ever has
     # to grow past what f16 allows, this is the first knob to revisit.
-    # (86 KiB of KV per token x 393216 = 32.3 GiB.)
+    # (86 KiB of KV per token x 262144 = 21.5 GiB.)
     - "--cache-type-k"
     - "f16"
     - "--cache-type-v"
@@ -174,7 +179,9 @@ resources:
     # Routed experts now run as CPU GEMMs on the critical path for every token.
     # The old 50m request would have made that pathologically slow.
     cpu: 16
-    # ~62 GiB of CPU-resident experts plus loader and runtime overhead.
+    # ~52 GiB of CPU-resident experts (20 layers) plus loader and runtime
+    # overhead. Kept at 80Gi rather than trimmed to match, so that raising
+    # cpuMoeLayers back up on a CUDA OOM does not also need a resource bump.
     memory: 80Gi
     nvidia.com/gpu: 1
   limits:
