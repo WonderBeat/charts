@@ -21,15 +21,28 @@ server:
   # experts stay on GPU, routed expert banks spill to host RAM via cpuMoeLayers.
   gpuLayers: "all"
   # Keep the routed-expert banks of the first N of 43 layers in CPU RAM.
-  # ~2.6 GiB of experts per layer, so 20 layers sheds ~52 GiB and leaves
-  # headroom on the GPU for the KV cache and compute buffers.
+  # ~2.6 GiB of expert weights per layer, but see the measured ~4.7 GiB of
+  # actual VRAM cost per layer below.
   # Lower this if VRAM allows (faster); raise it on CUDA OOM at startup.
   #
   # 25 -> 20: dropping --parallel 3 -> 2 (below) frees one 131072-token slot,
-  # i.e. 10.75 GiB of KV, which is spent here instead. Measured at ncmoe 25 /
-  # parallel 3: 65127 / 81559 MiB used, so 16.0 GiB free; reclaiming the slot
-  # gives ~26.8 GiB, and 5 layers back on GPU costs ~12.9 GiB, leaving ~13.9
-  # GiB of margin. Each further layer moved to GPU is ~2.6 GiB of that margin.
+  # i.e. 10.75 GiB of KV, which is spent here instead.
+  #
+  # MEASURED, and the per-layer cost is ~4.7 GiB, not the ~2.6 GiB the older
+  # comment here estimated from weights alone. Do not size this from the quant
+  # size: moving a layer to GPU also moves its compute buffers.
+  #   ncmoe 25 / parallel 3:  65127 / 81559 MiB   (16.0 GiB free)
+  #   ncmoe 20 / parallel 2:  78369 / 81559 MiB   ( 3.1 GiB free, idle)
+  #   ncmoe 20 / parallel 2:  78909 / 81559 MiB   ( 2.6 GiB free, both slots
+  #                                                saturated w/ 50k prompts)
+  # Decode went 23.4 -> 27.08 t/s solo (+16%) for that headroom.
+  #
+  # 2.6 GiB is deliberately thin but safe to run: llama.cpp allocates KV and
+  # compute buffers up front, so VRAM did not grow at all under load (78909
+  # both during and after the stress run). The residual risk is a future
+  # llama.cpp image needing larger buffers, which fails loudly at startup with
+  # CUDA OOM rather than corrupting output. If that happens, raise this by 1
+  # (~4.7 GiB back) rather than reaching for --cache-type-* or a smaller -c.
   cpuMoeLayers: 20
   # Set via helmfile (secret.yaml)
   apiKey: ""
@@ -180,8 +193,9 @@ resources:
     # The old 50m request would have made that pathologically slow.
     cpu: 16
     # ~52 GiB of CPU-resident experts (20 layers) plus loader and runtime
-    # overhead. Kept at 80Gi rather than trimmed to match, so that raising
-    # cpuMoeLayers back up on a CUDA OOM does not also need a resource bump.
+    # overhead; measured 59.3 GiB RSS against the 110Gi limit. Kept at 80Gi
+    # rather than trimmed to match, so that raising cpuMoeLayers back up on a
+    # CUDA OOM does not also need a resource bump.
     memory: 80Gi
     nvidia.com/gpu: 1
   limits:
