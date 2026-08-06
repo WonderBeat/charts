@@ -25,19 +25,32 @@ returning a connection error. `pai-sho` outages observed up to ~60s.
 
 Both sides must agree. The peer has to expose it, and it has to be listed here.
 
-```yaml
-ports:
-  - name: llama          # also the Service/container port name, max 15 chars
-    port: 8080           # listen port, and by default the peer port
-    mode: http           # http | tcp
-    comment: optional note rendered into haproxy.cfg
+Edit `helmfile.yaml`, not the chart's `values.yaml`. The deployed list lives in
+the helmfile so it is visible at the deploy entry point, and because a Helm list
+value **replaces** the chart default wholesale rather than merging, whatever
+helmfile passes is exactly what runs. Editing `values.yaml` alone does nothing.
 
-  - name: postgres
-    port: 5432
-    mode: tcp            # blind byte pipe, no HTTP parsing
+```yaml
+# pai-sho-proxy/helmfile.yaml
+      - ports:
+          - name: llama          # also the Service/container port name, max 15 chars
+            port: 8080           # listen port, and by default the peer port
+            mode: http           # http | tcp
+            comment: optional note rendered into haproxy.cfg
+
+          - name: postgres
+            port: 5432
+            mode: tcp            # blind byte pipe, no HTTP parsing
 ```
 
-On the server chart, expose the matching port via `sidecar.exposePorts`.
+```yaml
+# llama-hmnd-server/helmfile.yaml.gotmpl  <- the other half
+      - sidecar:
+          exposePorts: "8080,5432"
+```
+
+A port listed on the proxy but not exposed on the peer binds locally and then
+refuses connections, which surfaces as HAProxy retrying for ~75s and then 503.
 
 `mode` picks the HAProxy proxying mode:
 
@@ -55,12 +68,22 @@ crashloops the pod.
 with any entry in `ports`. It is deliberately not in the Service: probes must
 succeed while the tunnel is down, so the pod is not restarted during an outage.
 
+Applying a port change recreates the pod (`strategy: Recreate`, see below), so
+expect a brief outage.
+
 ## Verifying
 
 ```bash
+./verify-helmfile.sh                      # port config in helmfile takes effect
 ./verify-config.sh                        # render + `haproxy -c` on each case
 API_KEY=<key> ./verify-runtime.sh         # traffic really flows on an added port
 ```
+
+`verify-helmfile.sh` guards the two silent failure modes of configuring ports at
+the helmfile level: that the server's `sidecar.exposePorts` merges with
+`secret.yaml`'s `sidecar.ticket` instead of clobbering it (a lost ticket means
+the tunnel just never connects), and that the helmfile `ports` list actually
+reaches the templates. Needs no cluster.
 
 `verify-config.sh` runs the real HAProxy binary against the rendered config,
 which is the only check that proves the generated config is loadable. Covers

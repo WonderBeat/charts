@@ -16,6 +16,12 @@ paiSho:
 # ---------------------------------------------------------------------------
 # Ports routed from this Service to the peer's exposed ports over the tunnel.
 #
+# NOTE: this is only the chart default. The deployed list lives in
+# ../helmfile.yaml, which is where it should be edited: a Helm list VALUE
+# REPLACES this one wholesale rather than merging, so whatever helmfile passes
+# is exactly what gets deployed. Editing here alone has no effect on
+# `helmfile apply`.
+#
 # How the pieces fit: the remote peer runs `pai-sho daemon -e <port>`, which
 # makes the port appear in this daemon's bindings and be forwarded on 127.0.0.1
 # HERE. Kubernetes Services cannot target a pod's loopback, so HAProxy bridges
@@ -60,7 +66,7 @@ proxy:
   healthPort: 8081
   maxconn: 2048
   timeouts:
-    connect: 1s
+    connect: 2s
     # Generations are long-running and streamed.
     client: 1h
     server: 1h

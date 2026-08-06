@@ -2,3 +2,49 @@ releases:
   - name: pai-sho-proxy
     chart: ./pai-sho-proxy
     namespace: network
+    values:
+      # ---------------------------------------------------------------------
+      # PORTS ROUTED OVER THE TUNNEL. This is the knob you actually edit.
+      #
+      # Each entry becomes a Service port, a container port, and an HAProxy
+      # frontend/backend pair.
+      #
+      #   name        short label, also the Service/container port name.
+      #               Kubernetes caps port names at 15 chars: lowercase
+      #               alphanumeric and '-'.
+      #   port        port to listen on, and by default the peer port to
+      #               forward to.
+      #   targetPort  optional, only if the local pai-sho binding differs
+      #               from `port`.
+      #   mode        http | tcp. Anything else fails at template time.
+      #                 http: httplog, unbuffered (SSE-safe), http-request
+      #                       timeout applies.
+      #                 tcp:  blind byte pipe. Use for non-HTTP protocols
+      #                       (databases, SSH, TLS passthrough) where HTTP
+      #                       parsing would corrupt the stream.
+      #   comment     optional, rendered into haproxy.cfg.
+      #
+      # ADDING A PORT NEEDS BOTH SIDES. The peer must also expose it, via
+      # `sidecar.exposePorts` in ../llama-hmnd-server (comma separated). A port
+      # listed here but not exposed there will bind locally and then refuse
+      # connections, which surfaces as HAProxy retrying for ~75s then 503.
+      #
+      # After editing, `helmfile apply` recreates the pod (strategy: Recreate,
+      # because the identity key is a single ReadWriteOnce volume), so expect a
+      # brief outage. Verify with:
+      #   ./verify-config.sh                 # haproxy -c on the rendered config
+      #   API_KEY=<key> ./verify-runtime.sh  # traffic really flows
+      # ---------------------------------------------------------------------
+      - ports:
+          - name: llama
+            port: 8080
+            mode: http
+            comment: llama.cpp OpenAI-compatible API, streams SSE
+
+          # Example of a second port. Uncomment, expose 5432 on the peer, and
+          # `helmfile apply`:
+          #
+          # - name: postgres
+          #   port: 5432
+          #   mode: tcp
+          #   comment: postgres wire protocol, must not be HTTP-parsed
