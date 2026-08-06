@@ -1,0 +1,15 @@
+releases:
+  - name: dego-dev
+    chart: ./llama-hmnd-server
+    namespace: default
+    values:
+      - secret.yaml
+      # Hardware profile. Defaults to the chart's own value (1gpu); override
+      # without editing tracked files:
+      #
+      #   GPU_PROFILE=2gpu helmfile apply
+      #
+      # Switching to 2gpu changes the model (UD-IQ4_XS -> UD-Q8_K_XL), so the
+      # pod re-downloads 150.8 GiB into the PVC before /health answers. Expect
+      # a long outage on the first apply, not the usual ~12 min reload.
+      - gpuProfile: {{ env "GPU_PROFILE" | default "1gpu" }}
