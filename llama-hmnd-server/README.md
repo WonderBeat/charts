@@ -44,7 +44,17 @@ cannot be served by pods that landed on different nodes.
 
 ### Before trusting the 2gpu numbers
 
-They are arithmetic, not measurements, because a first deploy re-downloads
+Capacity is not the blocker: nodes carry 8 GPUs and 11 of them had >=2 free at
+the time of writing, including `gpu-014` where the pod currently runs (5/8 used),
+so `nvidia.com/gpu: 2` schedules in place without evicting anything. Re-check
+before switching:
+
+```bash
+./check-gpu-capacity.sh   # exits non-zero if no node can fit a 2-GPU pod
+```
+
+What is unverified is the VRAM arithmetic.
+These are calculations, not measurements, because a first deploy re-downloads
 150.8 GiB. `cpuMoeLayers: 16` carries ~15 GiB of deliberate margin. After a
 first deploy, verify as was done for `1gpu`:
 
@@ -67,8 +77,9 @@ startup; it does not corrupt output.
 ## Verifying changes
 
 ```bash
-./verify-profiles.sh    # 12 render checks, incl. live-pod arg equivalence
-./verify-helmfile.sh    # toggle works through the real deploy path
+./verify-profiles.sh      # 12 render checks, incl. live-pod arg equivalence
+./verify-helmfile.sh      # toggle works through the real deploy path
+./check-gpu-capacity.sh   # a 2-GPU pod can actually be scheduled
 ```
 
 `verify-profiles.sh` compares args as *sets* of flag/value pairs rather than as
