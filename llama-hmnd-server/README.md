@@ -39,6 +39,11 @@ The `1gpu` profile is deployed and in sync: `helmfile diff` reports no changes,
 and after the profile refactor the pod came back with `n_slots = 2,
 n_ctx_slot = 131072` at 78369/81559 MiB, identical to the pre-refactor figures.
 
+Re-confirmed live after the move of the profiles into `helmfile.yaml.gotmpl`:
+`helmfile diff` is empty, `/health` is `ok`, `/v1/models` advertises
+`deepseek-flash`, both slots were decoding at ~16-17 t/s, and VRAM sat at
+78859/81559 MiB. The refactor did not touch the running pod.
+
 ### Why 2 GPUs is one pod, not two
 
 KV lives inside a single `llama.cpp` process. Two 1-GPU pods would give two
