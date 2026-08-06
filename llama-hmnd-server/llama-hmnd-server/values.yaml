@@ -99,6 +99,13 @@ profiles:
 
   # 2 x H100 80GB in ONE pod. Nodes here carry 8 GPUs, so both GPUs come from a
   # single node by construction and `nvidia.com/gpu: 2` is the whole request.
+  #
+  # SHAPE ONLY. This fallback carries the topology (2 GPUs, layer split,
+  # co-location) but NOT the tuned numbers, so a standalone
+  # `helm template --set gpuProfile=2gpu` renders 2 GPUs still running the 1gpu
+  # model and context. That combination is deliberately never deployed: the
+  # helmfile supplies the real model, contextSize and cpuMoeLayers, and
+  # verify-profiles.sh only ever checks the helmfile render.
   2gpu:
     server:
       splitMode: "layer"
