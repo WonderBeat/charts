@@ -1,0 +1,106 @@
+repositories:
+  - name: influxdata
+    url: https://helm.influxdata.com/
+
+releases:
+  - name: telegraf
+    namespace: monitoring
+    chart: influxdata/telegraf-ds
+    strategicMergePatches:
+      - apiVersion: apps/v1
+        kind: DaemonSet
+        metadata:
+          name: telegraf-telegraf-ds
+        spec:
+          template:
+            spec:
+              containers:
+                - name: telegraf-ds
+                  command: ["/usr/bin/telegraf"]
+                  args: ["--config", "/etc/telegraf/telegraf.conf"]
+                  securityContext:
+                    privileged: true
+                    runAsUser: 0
+    values:
+      - secrets.yaml
+      - image:
+          repo: "telegraf"
+          tag: "1.36-alpine"
+      
+      - args:
+          - "telegraf"
+          - "--config"
+          - "/etc/telegraf/telegraf.conf"
+      
+      - env:
+          - name: HOSTNAME
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.nodeName
+          - name: HOSTIP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.hostIP
+          - name: NODE_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.nodeName
+          - name: NODE_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.hostIP
+      
+      - resources:
+          requests:
+            memory: 64Mi
+          limits:
+            memory: 148Mi
+      
+      - hostNetwork: true
+      - hostPID: true
+      
+      - podSecurityContext:
+          runAsUser: 0
+          runAsNonRoot: false
+          fsGroup: 0
+      
+      - containerSecurityContext:
+          privileged: true
+          runAsUser: 0
+      
+      - rbac:
+          create: true
+          rules:
+            - apiGroups:
+                - ""
+              resources:
+                - nodes
+                - nodes/proxy
+                - nodes/stats
+                - services
+                - endpoints
+                - pods
+              verbs:
+                - get
+                - list
+                - watch
+            - nonResourceURLs:
+                - /metrics
+              verbs:
+                - get
+      
+      - volumes:
+          - name: varlog
+            hostPath:
+              path: /var/log
+          - name: varlibdockercontainers
+            hostPath:
+              path: /var/lib/docker/containers
+      
+      - mountPoints:
+          - name: varlog
+            mountPath: /var/log
+            readOnly: true
+          - name: varlibdockercontainers
+            mountPath: /var/lib/docker/containers
+            readOnly: true
