@@ -58,12 +58,29 @@ succeed while the tunnel is down, so the pod is not restarted during an outage.
 ## Verifying
 
 ```bash
-./verify-config.sh   # renders each case and validates it with `haproxy -c`
+./verify-config.sh                        # render + `haproxy -c` on each case
+API_KEY=<key> ./verify-runtime.sh         # traffic really flows on an added port
 ```
 
-This runs the real HAProxy binary against the rendered config, which is the only
-check that proves the generated config is loadable. Covers single-port,
-mixed http+tcp, distinct `targetPort`, and both template-time rejections.
+`verify-config.sh` runs the real HAProxy binary against the rendered config,
+which is the only check that proves the generated config is loadable. Covers
+single-port, mixed http+tcp, distinct `targetPort`, and both template-time
+rejections.
+
+`verify-runtime.sh` goes further: it temporarily adds a second port in `tcp`
+mode against the live release, confirms HAProxy binds it and that both ports
+serve traffic, then reverts. Verified output:
+
+```
+haproxy listeners:  10.45.7.120:8080  10.45.7.120:9090  0.0.0.0:8081
+PASS  port 8080 answered      (http mode)
+PASS  port 9090 answered      (tcp mode)
+```
+
+It tests from inside the pod against the pod IP on purpose. HAProxy binds the
+pod IP rather than `0.0.0.0` so pai-sho keeps loopback, and an earlier version of
+this test failed misleadingly by pointing a `tcp` backend at HAProxy's own health
+frontend, which binds `0.0.0.0:8081` and so is not reachable on `127.0.0.1`.
 
 ## The identity key, and why persistence matters
 
