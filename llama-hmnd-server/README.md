@@ -26,6 +26,10 @@ GPU_PROFILE=2gpu helmfile apply     # 2gpu profile
 | host RAM req/lim | 80Gi / 110Gi | 96Gi / 140Gi |
 | status | **measured** | **derived, unverified** |
 
+The `1gpu` profile is deployed and in sync: `helmfile diff` reports no changes,
+and after the profile refactor the pod came back with `n_slots = 2,
+n_ctx_slot = 131072` at 78369/81559 MiB, identical to the pre-refactor figures.
+
 ### Why 2 GPUs is one pod, not two
 
 KV lives inside a single `llama.cpp` process. Two 1-GPU pods would give two
