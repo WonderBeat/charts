@@ -1,3 +1,4 @@
+{{- $server := include "llama-hmnd-server.server" . | fromYaml }}
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -34,22 +35,44 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           args:
             - --host
-            - {{ .Values.server.host | quote }}
+            - {{ $server.host | quote }}
             - --port
-            - {{ .Values.server.port | quote }}
+            - {{ $server.port | quote }}
             - -hf
-            - {{ .Values.server.model | quote }}
-            {{- with .Values.server.modelFile }}
+            - {{ $server.model | quote }}
+            {{- with $server.modelFile }}
             - --hf-file
             - {{ . | quote }}
             {{- end }}
             - --n-gpu-layers
-            - {{ .Values.server.gpuLayers | quote }}
-            {{- if .Values.server.cpuMoeLayers }}
+            - {{ $server.gpuLayers | quote }}
+            {{- if $server.cpuMoeLayers }}
             - --n-cpu-moe
-            - {{ .Values.server.cpuMoeLayers | quote }}
+            - {{ $server.cpuMoeLayers | quote }}
             {{- end }}
-            {{- range .Values.server.extraArgs }}
+            {{- range $server.extraArgs }}
+            - {{ . | quote }}
+            {{- end }}
+            - "-c"
+            - {{ $server.contextSize | quote }}
+            - "--parallel"
+            - {{ $server.parallel | quote }}
+            - "--cache-type-k"
+            - {{ $server.cacheTypeK | quote }}
+            - "--cache-type-v"
+            - {{ $server.cacheTypeV | quote }}
+            - "--cache-ram"
+            - {{ $server.cacheRam | quote }}
+            - "-b"
+            - {{ $server.batchSize | quote }}
+            - "-ub"
+            - {{ $server.ubatchSize | quote }}
+            {{- with $server.splitMode }}
+            - "--split-mode"
+            - {{ . | quote }}
+            {{- end }}
+            {{- with $server.tensorSplit }}
+            - "--tensor-split"
             - {{ . | quote }}
             {{- end }}
           env:
@@ -64,7 +87,7 @@ spec:
               value: {{ .Values.persistence.mountPath | quote }}
           ports:
             - name: http
-              containerPort: {{ .Values.server.port }}
+              containerPort: {{ $server.port }}
               protocol: TCP
           readinessProbe:
             httpGet:
@@ -72,14 +95,15 @@ spec:
               port: http
             initialDelaySeconds: 60
             periodSeconds: 30
-            # 127.3 GiB has to be downloaded, then read into RAM, before /health
-            # answers. 480 x 30s = 4h of headroom for a cold PVC.
+            # 127.3 GiB (1gpu) or 150.8 GiB (2gpu) has to be downloaded, then
+            # read into RAM, before /health answers. 480 x 30s = 4h of headroom
+            # for a cold PVC.
             failureThreshold: 480
           volumeMounts:
             - name: cache
               mountPath: {{ .Values.persistence.mountPath }}
           resources:
-            {{- toYaml .Values.resources | nindent 12 }}
+            {{- include "llama-hmnd-server.resources" . | nindent 12 }}
         - name: tunnel
           image: "{{ .Values.sidecar.image.repository }}:{{ .Values.sidecar.image.tag }}"
           imagePullPolicy: {{ .Values.sidecar.image.pullPolicy }}
@@ -102,7 +126,7 @@ spec:
             - name: PAI_SHO_URL
               value: {{ .Values.sidecar.downloadUrl | quote }}
             - name: PAI_SHO_EXPOSE
-              value: {{ .Values.sidecar.exposePorts | default .Values.server.port | quote }}
+              value: {{ .Values.sidecar.exposePorts | default $server.port | quote }}
             - name: PAI_SHO_TICKET
               valueFrom:
                 secretKeyRef:
@@ -125,9 +149,9 @@ spec:
       nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.affinity }}
+      {{- with (include "llama-hmnd-server.affinity" .) }}
       affinity:
-        {{- toYaml . | nindent 8 }}
+        {{- . | nindent 8 }}
       {{- end }}
       {{- with .Values.tolerations }}
       tolerations:
