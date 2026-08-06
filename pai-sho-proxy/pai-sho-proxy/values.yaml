@@ -1,0 +1,110 @@
+replicaCount: 1
+
+nameOverride: ""
+fullnameOverride: ""
+
+image:
+  repository: alpine
+  tag: "3.20"
+  pullPolicy: IfNotPresent
+
+paiSho:
+  downloadUrl: "https://github.com/cablehead/pai-sho/releases/download/v0.3.0/pai-sho-v0.3.0-linux-arm64.tar.gz"
+  # Reconnect quickly: this delay is added directly to every tunnel outage.
+  restartDelaySeconds: 1
+
+# ---------------------------------------------------------------------------
+# Ports routed from this Service to the peer's exposed ports over the tunnel.
+#
+# How the pieces fit: the remote peer runs `pai-sho daemon -e <port>`, which
+# makes the port appear in this daemon's bindings and be forwarded on 127.0.0.1
+# HERE. Kubernetes Services cannot target a pod's loopback, so HAProxy bridges
+# pod-IP:port -> 127.0.0.1:port. Adding a port therefore needs BOTH sides: the
+# peer must expose it (server chart's `sidecar.exposePorts`) and it must be
+# listed here.
+#
+# Fields:
+#   name        short label, also the Service/container port name.
+#               Kubernetes caps port names at 15 chars, lowercase alphanumeric
+#               and '-'.
+#   port        port to listen on, and by default the peer port to forward to.
+#   targetPort  optional, if the local pai-sho binding differs from `port`.
+#   mode        'http' or 'tcp'. http gives httplog, SSE-safe unbuffered
+#               streaming, and the http-request timeout. tcp is a blind byte
+#               pipe: use it for non-HTTP protocols (databases, SSH, TLS
+#               passthrough) where HTTP parsing would corrupt the stream.
+#               Anything invalid fails at template time.
+#   comment     optional note rendered into haproxy.cfg.
+#
+# Only the mode differs in behaviour; retries and timeouts are shared, since
+# they exist to absorb tunnel flap rather than anything protocol-specific.
+# ---------------------------------------------------------------------------
+ports:
+  - name: llama
+    port: 8080
+    mode: http
+    comment: llama.cpp OpenAI-compatible API, streams SSE
+
+proxy:
+  image:
+    repository: haproxy
+    tag: "3.0-alpine"
+    pullPolicy: IfNotPresent
+  # Each retry costs ~1s (verified empirically: retries=30 gives up at ~30s),
+  # so this absorbs roughly this many seconds of tunnel downtime before the
+  # client sees a 503. pai-sho outages last up to ~60s, so keep headroom.
+  retries: 75
+  # Port for HAProxy's own /healthz, kept separate from proxied traffic so
+  # probes succeed even while the tunnel is down. Must not collide with any
+  # entry in `ports`.
+  healthPort: 8081
+  maxconn: 2048
+  timeouts:
+    connect: 1s
+    # Generations are long-running and streamed.
+    client: 1h
+    server: 1h
+    # Applies to http-mode frontends only; tcp mode has no notion of a request.
+    httpRequest: 30s
+    queue: 1m
+  resources:
+    requests:
+      memory: 32Mi
+
+service:
+  type: ClusterIP
+
+persistence:
+  storageClass: local-path
+  size: 1Mi
+  # Reuse an existing PVC instead of creating one. This is how the rename from
+  # llama-hmnd-client preserved the pai-sho identity key: the old release's
+  # claim (llama-hmnd-client-state) holds a private key on a local-path PV whose
+  # reclaimPolicy is Delete, so provisioning a fresh claim would have silently
+  # created a NEW identity and broken the peer relationship.
+  #
+  # Set to "" to let the chart create and own `<fullname>-state` instead.
+  existingClaim: "llama-hmnd-client-state"
+
+podAnnotations: {}
+podSecurityContext: {}
+securityContext: {}
+
+resources:
+  requests:
+    memory: 30Mi
+
+nodeSelector: {}
+tolerations: []
+
+# The pai-sho binary pinned above is linux-arm64, and the state PV is bound to a
+# specific node by local-path anyway.
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/arch
+              operator: In
+              values:
+                - arm64

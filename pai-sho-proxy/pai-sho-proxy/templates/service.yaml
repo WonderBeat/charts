@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "pai-sho-proxy.fullname" . }}
+  labels:
+    {{- include "pai-sho-proxy.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    {{- range .Values.ports }}
+    - port: {{ .port }}
+      targetPort: {{ .name }}
+      protocol: TCP
+      # Port names are capped at 15 chars by Kubernetes, which is why entries
+      # carry an explicit short 'name' rather than deriving one.
+      name: {{ .name }}
+    {{- end }}
+  selector:
+    {{- include "pai-sho-proxy.selectorLabels" . | nindent 4 }}

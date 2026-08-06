@@ -103,6 +103,16 @@ check("sampling identical across profiles",
           '--repeat-penalty','--repeat-last-n','--jinja','--reasoning-format']))
 check("overflow guard on both", p1.get('--no-context-shift') and p2.get('--no-context-shift'))
 
+# The stable alias is the client-facing model name. It must be present and
+# IDENTICAL across profiles: switching hardware must not change what
+# /v1/models advertises. (llama-server ignores the request's "model" field, so
+# this affects discovery/echo only, not routing.)
+check("both profiles set --alias", bool(p1.get('--alias')) and bool(p2.get('--alias')))
+check("alias is 'deepseek-flash' on both",
+      p1.get('--alias')=='deepseek-flash' and p2.get('--alias')=='deepseek-flash')
+check("alias is not the quant-specific -hf string",
+      p1.get('--alias')!=p1['-hf'] and p2.get('--alias')!=p2['-hf'])
+
 aff=(two.get('affinity') or {}).get('podAffinity',{}).get(
      'requiredDuringSchedulingIgnoredDuringExecution',[])
 check("2gpu has required podAffinity", bool(aff))

@@ -1,0 +1,9 @@
+apiVersion: v2
+name: pai-sho-proxy
+description: Routes Kubernetes Services to ports exposed by a pai-sho tunnel peer
+
+type: application
+
+version: 0.2.0
+
+appVersion: "0.1.0"

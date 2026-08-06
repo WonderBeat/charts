@@ -75,6 +75,10 @@ spec:
             - "--tensor-split"
             - {{ . | quote }}
             {{- end }}
+            {{- with $server.alias }}
+            - "--alias"
+            - {{ . | quote }}
+            {{- end }}
           env:
             - name: LLAMA_API_KEY
               valueFrom:

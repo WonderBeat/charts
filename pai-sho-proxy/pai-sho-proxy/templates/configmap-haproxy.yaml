@@ -1,0 +1,57 @@
+{{- include "pai-sho-proxy.validatePorts" . }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "pai-sho-proxy.fullname" . }}-haproxy
+  labels:
+    {{- include "pai-sho-proxy.labels" . | nindent 4 }}
+data:
+  haproxy.cfg: |
+    global
+      log stdout format raw local0 info
+      maxconn {{ .Values.proxy.maxconn }}
+
+    defaults
+      log global
+      # Retry transparently while the pai-sho tunnel is down. Each failed
+      # connect costs ~1s (timeout connect, plus HAProxy's internal retry
+      # backoff), so retries ~= seconds of tunnel downtime absorbed.
+      retries {{ .Values.proxy.retries }}
+      retry-on conn-failure empty-response response-timeout 502 503
+      timeout connect {{ .Values.proxy.timeouts.connect }}
+      timeout client {{ .Values.proxy.timeouts.client }}
+      timeout server {{ .Values.proxy.timeouts.server }}
+      timeout queue {{ .Values.proxy.timeouts.queue }}
+
+    # Liveness/readiness endpoint served by HAProxy itself, so the pod is not
+    # restarted while the tunnel is temporarily down. Always http, regardless of
+    # what the proxied ports are.
+    frontend health
+      mode http
+      bind 0.0.0.0:{{ .Values.proxy.healthPort }}
+      monitor-uri /healthz
+{{ range .Values.ports }}
+    # ---- {{ .name }} ({{ .mode | default "http" }}) {{ with .comment }}: {{ . }}{{ end }}
+    frontend fe-{{ .name }}
+      mode {{ .mode | default "http" }}
+      {{- if eq (.mode | default "http") "http" }}
+      option httplog
+      # Do not buffer the request: streamed responses (SSE) would otherwise
+      # have latency added to token delivery.
+      no option http-buffer-request
+      timeout http-request {{ $.Values.proxy.timeouts.httpRequest }}
+      {{- else }}
+      option tcplog
+      {{- end }}
+      # Bind the pod IP only. 127.0.0.1:{{ .port }} belongs to pai-sho, which
+      # forwards peer-exposed ports on loopback: binding 0.0.0.0 here would
+      # steal it and proxy to ourselves.
+      bind "${POD_IP}:{{ .port }}"
+      default_backend be-{{ .name }}
+
+    backend be-{{ .name }}
+      mode {{ .mode | default "http" }}
+      # No health check: the tunnel flaps, and marking the server down would
+      # turn a retryable connect error into an immediate 503.
+      server tunnel 127.0.0.1:{{ .targetPort | default .port }}
+{{ end }}

@@ -1,0 +1,23 @@
+{{- if not .Values.persistence.existingClaim }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "pai-sho-proxy.stateClaimName" . }}
+  labels:
+    {{- include "pai-sho-proxy.labels" . | nindent 4 }}
+  annotations:
+    # The pai-sho identity key lives here. Keep the claim across a helm
+    # uninstall so a rename or reinstall does not destroy the tunnel identity:
+    # the backing PV is provisioned by local-path with reclaimPolicy Delete, so
+    # deleting this claim deletes the key.
+    helm.sh/resource-policy: keep
+spec:
+  accessModes:
+    - ReadWriteOnce
+  {{- with .Values.persistence.storageClass }}
+  storageClassName: {{ . }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.persistence.size }}
+{{- end }}

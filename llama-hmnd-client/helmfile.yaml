@@ -1,4 +1,0 @@
-releases:
-  - name: llama-hmnd-client
-    chart: ./llama-hmnd-client
-    namespace: network

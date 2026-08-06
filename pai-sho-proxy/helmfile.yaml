@@ -1,0 +1,4 @@
+releases:
+  - name: pai-sho-proxy
+    chart: ./pai-sho-proxy
+    namespace: network

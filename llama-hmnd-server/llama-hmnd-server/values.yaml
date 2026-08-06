@@ -94,6 +94,22 @@ server:
   splitMode: ""
   tensorSplit: ""
 
+  # Stable model name for the API (-a/--alias).
+  #
+  # Without this, /v1/models advertises the -hf value, so the advertised id
+  # changes on every quant swap (UD-IQ4_XS -> UD-Q8_K_XL under the 2gpu profile)
+  # and any client that discovers or displays it sees a different model.
+  # "deepseek-flash" is the stable handle, identical across both profiles.
+  #
+  # MEASURED, and worth knowing before adding compat aliases: this server
+  # IGNORES the "model" field in requests. A single-model llama-server serves
+  # whatever is loaded, so "unsloth/...:UD-IQ4_XS" and even "does-not-exist"
+  # both generate successfully and echo back model="deepseek-flash". The alias
+  # therefore only controls what /v1/models advertises and what responses echo;
+  # it cannot break a client that pins an old string. That is why this is a
+  # single name and not a comma-separated compatibility list.
+  alias: "deepseek-flash"
+
   # Set via helmfile (secret.yaml)
   apiKey: ""
 
