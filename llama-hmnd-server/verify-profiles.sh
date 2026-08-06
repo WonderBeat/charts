@@ -134,4 +134,72 @@ else
   echo "  PASS: $(grep -o 'gpuProfile .*' /tmp/_gp.err | head -1)"
 fi
 rm -f /tmp/_gp.err
+
+# The downstream router advertises a fixed context_window to clients. It must
+# equal the PER-REQUEST context (-c / --parallel) of the profile that is live,
+# because --no-context-shift turns an over-estimate into a hard 400 and an
+# under-estimate silently wastes half the pool. A comment cannot enforce this.
+echo
+echo "=== downstream gomodel context_window ==="
+GOMODEL=../gomodel/secret.yaml
+if [ ! -f "$GOMODEL" ]; then
+  echo "  SKIP: $GOMODEL not present"
+else
+  LIVE_PROFILE="$LIVE_PROFILE" GOMODEL="$GOMODEL" python3 - <<'PY' || rc=1
+import os, subprocess, sys, yaml
+
+prof = os.environ['LIVE_PROFILE']
+env = dict(os.environ, GPU_PROFILE=prof)
+out = subprocess.run(['helmfile', 'template'], capture_output=True, text=True,
+                     env=env).stdout
+args = None
+for d in yaml.safe_load_all(out):
+    if d and d.get('kind') == 'StatefulSet':
+        for c in d['spec']['template']['spec']['containers']:
+            if c['name'] == 'server':
+                args = c['args']
+if not args:
+    print("  FAIL: could not render server args")
+    sys.exit(1)
+g = lambda f: args[args.index(f) + 1]
+per_req = int(g('-c')) // int(g('--parallel'))
+
+found = []
+def walk(n):
+    if isinstance(n, str):
+        # gomodel/secret.yaml nests the whole config as a YAML string under
+        # `config: |`, so the interesting keys are one parse deeper. Only
+        # recurse when the parse actually yielded structure: a scalar string
+        # parses back to itself and would recurse forever.
+        if 'deepseek-flash' in n:
+            try:
+                inner = yaml.safe_load(n)
+            except yaml.YAMLError:
+                return
+            if isinstance(inner, (dict, list)):
+                walk(inner)
+    elif isinstance(n, dict):
+        if n.get('id') == 'deepseek-flash':
+            found.append((n.get('metadata') or {}).get('context_window'))
+        for v in n.values():
+            walk(v)
+    elif isinstance(n, list):
+        for v in n:
+            walk(v)
+walk(yaml.safe_load(open(os.environ['GOMODEL'])))
+
+if not found:
+    print("  FAIL: no deepseek-flash entry found in gomodel; this check was "
+          "silently skipping, which is the drift it exists to catch")
+    sys.exit(1)
+print(f"  {prof} per-request ctx {per_req}, gomodel advertises {found}")
+bad = [c for c in found if c != per_req]
+if bad:
+    print(f"  FAIL: gomodel context_window {bad} != {per_req}; "
+          "update ../gomodel/secret.yaml")
+    sys.exit(1)
+print("  PASS  gomodel context_window matches the live profile")
+PY
+fi
+
 exit $rc

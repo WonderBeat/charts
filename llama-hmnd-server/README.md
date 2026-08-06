@@ -86,10 +86,17 @@ startup; it does not corrupt output.
 ## Verifying changes
 
 ```bash
-./verify-profiles.sh      # 12 render checks, incl. live-pod arg equivalence
+./verify-profiles.sh      # render checks, incl. live-pod arg equivalence
 ./verify-helmfile.sh      # toggle works through the real deploy path
 ./check-gpu-capacity.sh   # a 2-GPU pod can actually be scheduled
 ```
+
+`verify-profiles.sh` also checks the downstream coupling: `../gomodel/secret.yaml`
+advertises a fixed `context_window` to clients, and it must equal the live
+profile's per-request context (`-c / --parallel`, 131072 on `1gpu`, 262144 on
+`2gpu`). With `--no-context-shift` an over-estimate is a hard 400 and an
+under-estimate silently wastes half the pool. Confirmed to fail on drift:
+`LIVE_PROFILE=2gpu ./verify-profiles.sh` exits 1 against today's 131072.
 
 `verify-profiles.sh` compares args as *sets* of flag/value pairs rather than as
 ordered lists. Hardware-dependent flags are rendered after `extraArgs`, so a
