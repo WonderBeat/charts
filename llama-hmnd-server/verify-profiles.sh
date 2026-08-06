@@ -2,11 +2,9 @@
 #
 # Render-time checks for the gpuProfile toggle.
 #
-# Why this exists: the profile toggle refactor moved hardware-dependent flags
-# out of the extraArgs list into structured values, which reorders the rendered
-# arg list. A plain `helmfile diff` therefore shows a large, alarming, and
-# entirely cosmetic diff. This script compares args as SETS of flag/value pairs
-# so "did the deployed behaviour change?" can actually be answered.
+# Renders through helmfile, not `helm template --set`: the profile definitions
+# live in helmfile.yaml.gotmpl now, so a chart-only render would check the
+# chart's fallback values instead of what actually deploys.
 #
 # Run from this directory:  ./verify-profiles.sh
 #
@@ -20,13 +18,12 @@
 set -uo pipefail
 cd "$(dirname "$0")" || exit 1
 
-CHART=./llama-hmnd-server
 RELEASE=dego-dev
 POD=dego-dev-throwaway-0
 LIVE_PROFILE=${LIVE_PROFILE:-1gpu}
 
 render() {
-  helm template "$RELEASE" "$CHART" --set "gpuProfile=$1" | python3 -c "
+  GPU_PROFILE="$1" helmfile template 2>/dev/null | python3 -c "
 import sys,yaml,json
 for d in yaml.safe_load_all(sys.stdin):
     if d and d.get('kind')=='StatefulSet':
@@ -131,7 +128,7 @@ rc=$?
 
 echo
 echo "=== unknown profile must fail loudly ==="
-if helm template "$RELEASE" "$CHART" --set gpuProfile=4gpu >/dev/null 2>/tmp/_gp.err; then
+if GPU_PROFILE=4gpu helmfile template >/dev/null 2>/tmp/_gp.err; then
   echo "  FAIL: unknown profile rendered instead of erroring"; rc=1
 else
   echo "  PASS: $(grep -o 'gpuProfile .*' /tmp/_gp.err | head -1)"

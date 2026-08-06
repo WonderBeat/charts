@@ -4,15 +4,246 @@ releases:
     namespace: default
     values:
       - secret.yaml
-      # Hardware profile. Defaults to the chart's own value (1gpu); override
-      # without editing tracked files:
+
+      # =====================================================================
+      # WHICH HARDWARE PROFILE IS DEPLOYED
+      # =====================================================================
+      # Pick 1gpu or 2gpu. Both are fully defined below, so switching model,
+      # context size or any other per-variant knob is an edit in THIS file;
+      # the chart carries no hardware-specific numbers of its own.
       #
-      #   GPU_PROFILE=2gpu helmfile apply
+      #   helmfile apply                    # 1gpu (default)
+      #   GPU_PROFILE=2gpu helmfile apply   # 2gpu
       #
-      # Switching to 2gpu changes the model (UD-IQ4_XS -> UD-Q8_K_XL), so the
-      # pod re-downloads 150.8 GiB into the PVC before /health answers. Expect
-      # a long outage on the first apply, not the usual ~12 min reload.
+      # Switching to 2gpu also changes the model (UD-IQ4_XS -> UD-Q8_K_XL), so
+      # the pod re-downloads 150.8 GiB into the PVC before /health answers.
+      # Expect a long outage on the first apply, not the usual ~12 min reload.
+      # Check capacity first: ./check-gpu-capacity.sh
       - gpuProfile: {{ env "GPU_PROFILE" | default "1gpu" }}
+
+      # =====================================================================
+      # SHARED SERVER SETTINGS (identical on both profiles)
+      # =====================================================================
+      # Anything hardware-dependent belongs in `profiles` below instead, so the
+      # two variants never restate the annotated sampling block and drift.
+      - server:
+          host: "0.0.0.0"
+          port: 8080
+          gpuLayers: "all"
+          # Prompt-processing batch sizes. Faster prompt processing on H100.
+          batchSize: 4096
+          ubatchSize: 2048
+          # KV stays f16 on both profiles: q8_0 KV on MLA attention compounds
+          # weight quantization error. Per-profile override exists if context
+          # ever has to grow beyond what f16 allows.
+          cacheTypeK: f16
+          cacheTypeV: f16
+          # Stable model name for the API (-a/--alias). Deliberately IDENTICAL
+          # across profiles: switching hardware must not change the id that
+          # /v1/models advertises, even though the quant behind it changes.
+          # (Measured: llama-server ignores the request's "model" field, so this
+          # affects discovery and response echo only, never routing.)
+          alias: "deepseek-flash"
+          # Args identical across profiles. These are a YAML list, and Helm
+          # cannot merge lists, which is exactly why every per-profile knob
+          # above/below is a structured key instead of an entry here.
+          extraArgs:
+            # Recommended sampling for this model (agentic scenarios).
+            - "--temp"
+            - "1.0"
+            - "--top-p"
+            - "0.95"
+            # Pinned to the current llama.cpp defaults rather than left
+            # implicit, so an image bump cannot silently move sampling. top-k
+            # runs BEFORE top-p, so an implicit 40 also meant --top-p 0.95 was
+            # never really what got applied.
+            - "--top-k"
+            - "40"
+            - "--min-p"
+            - "0.05"
+            # Anti-degeneration guard. Measured degeneration rate over 6k-token
+            # generations on a loop-inducing prompt:
+            #   rp 1.05 / window 256   25% (2/8)   <- old setting, not enough
+            #   rp 1.10 / window 256    0% (0/4)   <- this setting
+            #   rp 1.10 / window  64   75% (3/4)   <- window too narrow
+            #   DRY (multiplier 0.8)   75% (3/4)   <- markedly worse
+            # The wide window does as much work as the penalty: these loops
+            # drift across hundreds of tokens. Do not narrow it.
+            - "--repeat-penalty"
+            - "1.1"
+            - "--repeat-last-n"
+            - "256"
+            # Proper chat template + tool calling for agentic use.
+            - "--jinja"
+            # Extract thinking into message.reasoning_content. Without this,
+            # generations leaked a raw "</think>" into message.content.
+            - "--reasoning-format"
+            - "deepseek"
+            # Make context overflow a loud 400 instead of silent corruption.
+            # Context shift on MLA/DeepSeek rewrites positions unsupported by
+            # this architecture, and its failure mode (fluent looping text) is
+            # indistinguishable from a sampling problem. Fail fast.
+            - "--no-context-shift"
+            - "--flash-attn"
+            - "on"
+            # NOTE: --cache-reuse is intentionally absent. MLA/DeepSeek contexts
+            # do not support the KV shifting it needs, and llama.cpp logs
+            # "cache_reuse is not supported by this context".
+            #
+            # Read weights into RAM instead of mmap'ing them: CPU-resident
+            # expert tensors are hit every token, so page-fault latency is never
+            # amortized. (Replaces the deprecated --no-mmap.)
+            - "--load-mode"
+            - "none"
+            # The repo ships a 'dspark' speculative drafter. Pinned off so a
+            # future default cannot claim VRAM we have not budgeted.
+            - "--spec-type"
+            - "none"
+            # Prometheus /metrics endpoint.
+            - "--metrics"
+
+      # =====================================================================
+      # PER-VARIANT SETTINGS
+      # =====================================================================
+      # Each block is merged over `server` / `resources` / `affinity` above.
+      # Only deltas live here. Per-request context = contextSize / parallel.
+      - profiles:
+
+          # -------------------------------------------------------------
+          # 1 x H100 80GB. MEASURED: this is what is deployed today.
+          # -------------------------------------------------------------
+          1gpu:
+            server:
+              # Unsloth dynamic quant, 127.3 GiB. Tag-only reference (no
+              # modelFile) is deliberate: llama.cpp then resolves and fetches
+              # every split itself, whereas pinning one shard defeats that.
+              model: "unsloth/DeepSeek-V4-Flash-0731-GGUF:UD-IQ4_XS"
+              # TOTAL KV pool, split across `parallel` slots => 2 x 131072.
+              #
+              # The model declares a 1M training context and 1M is
+              # architecturally reachable, but not on one 80 GiB H100: MLA
+              # (kv_lora_rank 512, v 512, 43 layers, head_count_kv 1) costs
+              # 86 KiB of KV per token, so 1M ctx = 86 GiB of KV alone.
+              #
+              # 131072 per slot was measured NOT to cause long-context
+              # degeneration: the pod ran 2 x 131072 for 2d and still looped,
+              # and a stale undeployed sampling config was the real fix.
+              contextSize: 262144
+              # 2 slots, not 3, for throughput as much as VRAM: slots share one
+              # GPU and a decoding slot was observed collapsing from ~23 t/s to
+              # 0.20 t/s while another ran prompt eval. Solo decode 23.4 t/s;
+              # the same workload 3-slot contended measured 11.2 t/s.
+              parallel: 2
+              # Keep routed-expert banks of the first N of 43 layers in host
+              # RAM. Weights exceed one 80 GiB H100, so attention + shared
+              # experts stay on GPU and the routed banks spill.
+              #
+              # MEASURED cost is ~4.7 GiB of VRAM per layer, NOT the ~2.6 GiB
+              # the quant size suggests: moving a layer also moves its compute
+              # buffers. Do not size this from the quant size.
+              #   ncmoe 25 / parallel 3:  65127 / 81559 MiB  (16.0 GiB free)
+              #   ncmoe 20 / parallel 2:  78369 / 81559 MiB  ( 3.1 GiB free)
+              #   ncmoe 20 / parallel 2:  78909 / 81559 MiB  ( 2.6 GiB free,
+              #                                    both slots saturated @ 50k)
+              # Decode went 23.4 -> 27.08 t/s solo (+16%) for that headroom.
+              #
+              # 2.6 GiB is thin but safe: llama.cpp allocates KV and compute
+              # buffers up front, so VRAM did not grow under load. The residual
+              # risk is a future image needing bigger buffers, which fails
+              # loudly at startup with CUDA OOM. Then raise this by 1 (~4.7 GiB
+              # back) rather than reaching for --cache-type-* or a smaller -c.
+              cpuMoeLayers: 20
+              # Host-RAM prompt cache, MiB. The 8192 default produced a steady
+              # "making room for prompt cache entry" stream at ~1 GiB per
+              # eviction, so every turn re-ran prompt eval (35 s for a 27k
+              # prompt). The node has 2015 GiB of RAM, so this is cheap.
+              cacheRam: 98304
+              # Single GPU: both flags omitted entirely when empty.
+              splitMode: ""
+              tensorSplit: ""
+            resources:
+              requests:
+                nvidia.com/gpu: 1
+                # Routed experts run as CPU GEMMs on the critical path for
+                # every token, so this cannot be a token request.
+                cpu: 16
+                # ~52 GiB of CPU-resident experts (20 layers) plus loader and
+                # runtime overhead; measured 59.3 GiB RSS. Held at 80Gi rather
+                # than trimmed so raising cpuMoeLayers on a CUDA OOM does not
+                # also need a resource bump.
+                memory: 80Gi
+              limits:
+                nvidia.com/gpu: 1
+                # no CPU limit on purpose
+                memory: 110Gi
+            affinity: {}
+
+          # -------------------------------------------------------------
+          # 2 x H100 80GB in ONE pod. DERIVED, not yet measured.
+          # -------------------------------------------------------------
+          # One pod with 2 GPUs is the only shape that actually doubles
+          # context: KV lives inside a single llama.cpp process, so two 1-GPU
+          # pods would give two independent 131072 pools, not one 262144 pool.
+          # Hence --split-mode layer, which splits layers AND KV across cards.
+          #
+          # CAVEAT: these numbers are derived, because deploying this needs a
+          # 150.8 GiB download. Derivation, using the measured 86 KiB KV/token:
+          #   VRAM budget          2 x 81559 MiB      = 159.3 GiB
+          #   KV @ 524288 total    86 KiB x 524288    =  43.0 GiB
+          #   compute buffers etc  (~3 GiB per card)  =   6.0 GiB
+          #   => room for weights  159.3 - 43.0 - 6.0 = 110.3 GiB
+          #   Q8_K_XL weights                         = 150.8 GiB
+          #   => must live in host RAM                =  40.5 GiB
+          # Q8_K_XL averages 150.8/43 = ~3.5 GiB per layer, so ~12 layers is
+          # break-even; cpuMoeLayers 16 keeps ~15 GiB of deliberate margin,
+          # because an under-estimate costs a 12-minute reload to discover.
+          2gpu:
+            server:
+              # 5 splits, 150.8 GiB total. Tag-only so all splits resolve.
+              model: "unsloth/DeepSeek-V4-Flash-0731-GGUF:UD-Q8_K_XL"
+              # 2x the 1gpu pool: 2 slots x 262144 per request.
+              contextSize: 524288
+              parallel: 2
+              # Lower than 1gpu's 20 despite the bigger quant, because there is
+              # also 2x the VRAM. See the derivation above. Raise on CUDA OOM.
+              cpuMoeLayers: 16
+              # Split layers and KV across both cards. Without this llama.cpp
+              # uses one GPU and the doubled context cannot fit.
+              splitMode: "layer"
+              # Even split; both cards are identical H100 80GB.
+              tensorSplit: "1,1"
+              # Twice the context means twice the prompt-cache pressure.
+              cacheRam: 196608
+            resources:
+              requests:
+                nvidia.com/gpu: 2
+                cpu: 16
+                # ~56 GiB of CPU-resident Q8_K_XL experts (16 layers at ~3.5
+                # GiB) plus ~7 GiB measured overhead; 96Gi leaves room to raise
+                # cpuMoeLayers on a CUDA OOM without editing this too.
+                memory: 96Gi
+              limits:
+                nvidia.com/gpu: 2
+                memory: 140Gi
+            # Keep every replica on one node. A no-op at replicaCount 1, but it
+            # is the guard that makes raising replicaCount safe: a 2-GPU model
+            # cannot be served by pods that landed on different nodes.
+            #
+            # The selector value must match app.kubernetes.io/name from
+            # _helpers.tpl, i.e. the fullname. Spelled out because Helm values
+            # cannot call templates; verify-profiles.sh checks it against the
+            # chart's own rendered pod labels.
+            affinity:
+              podAffinity:
+                requiredDuringSchedulingIgnoredDuringExecution:
+                  - labelSelector:
+                      matchLabels:
+                        app.kubernetes.io/name: dego-dev-throwaway
+                    topologyKey: kubernetes.io/hostname
+
+      # =====================================================================
+      # TUNNEL
+      # =====================================================================
       # Ports this side EXPOSES over the pai-sho tunnel, comma separated.
       #
       # This is the server half of the tunnel config; the client half is the

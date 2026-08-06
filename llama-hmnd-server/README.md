@@ -12,8 +12,17 @@ GPU_PROFILE=2gpu helmfile apply     # 2gpu profile
 
 ## GPU profiles
 
-`gpuProfile` selects a block under `.Values.profiles`, merged over
+**`helmfile.yaml.gotmpl` is the source of truth.** Both profiles are defined
+there in full: model, context size, slots, `cpuMoeLayers`, cache sizes,
+sampling, resources and affinity. To change the model or context for either
+variant, edit that file and nothing else.
+
+`gpuProfile` selects a block under `profiles`, merged over
 `server` / `resources` / `affinity`. Only the deltas live in each profile.
+The chart's own `values.yaml` keeps structure and conservative fallbacks only,
+so `helm template ./llama-hmnd-server` still renders; deployed numbers are not
+duplicated there, because two annotated copies drift the first time one is
+tuned.
 
 | | `1gpu` | `2gpu` |
 |---|---|---|
@@ -89,8 +98,8 @@ whether behaviour actually changed.
 
 ## Tuning notes
 
-The heavily commented `values.yaml` is the real documentation. Two things worth
-knowing before touching it:
+The heavily commented `helmfile.yaml.gotmpl` is the real documentation. Two
+things worth knowing before touching it:
 
 - **Check the live args before re-tuning.** A tuned sampling config once sat
   undeployed for two days while long-context looping was blamed on sampling
