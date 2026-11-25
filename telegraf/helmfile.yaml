@@ -24,8 +24,9 @@ releases:
     values:
       - secrets.yaml
       - image:
-          repo: "telegraf"
-          tag: "1.36-alpine"
+          # slim build from ./docker.sh: 55MiB binary vs 301MiB stock (page-cache thrash under 148Mi limit)
+          repo: "harbor.gladiators.dev/library/telegraf"
+          tag: "1.39.3-slim"
       
       - args:
           - "telegraf"
@@ -49,6 +50,11 @@ releases:
             valueFrom:
               fieldRef:
                 fieldPath: status.hostIP
+          # Go sizes its heap from host RAM, not the cgroup limit, so it grew past
+          # 148Mi and got OOMKilled (apol 4x, kesaram 2x). GOMEMLIMIT makes GC
+          # aggressive at ~80% of the limit instead. Soft limit: no hard failure.
+          - name: GOMEMLIMIT
+            value: "118MiB"
       
       - resources:
           requests:
