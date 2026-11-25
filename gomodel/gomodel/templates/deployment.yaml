@@ -36,12 +36,19 @@ spec:
               port: 8080
             initialDelaySeconds: 10
             periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 5
           readinessProbe:
             httpGet:
               path: /health
               port: 8080
             initialDelaySeconds: 5
-            periodSeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          env:
+            - name: GOMODEL_CONFIG_SHA256
+              value: {{ .Values.config | default "" | toString | sha256sum }}
           volumeMounts:
             - name: config
               mountPath: /app/config/config.yaml
