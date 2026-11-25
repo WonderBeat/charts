@@ -2,6 +2,77 @@ repositories:
   - name: harbor
     url: https://helm.goharbor.io
 releases:
+  - name: harbor-gc-cronjob
+    namespace: db
+    chart: main/raw
+    values:
+      - resources:
+          - apiVersion: batch/v1
+            kind: CronJob
+            metadata:
+              name: harbor-gc
+            spec:
+              schedule: "30 3 * * 0"
+              suspend: false
+              concurrencyPolicy: Forbid
+              # Default failedJobsHistoryLimit is 1: both past failures had evaporated before anyone read them.
+              failedJobsHistoryLimit: 5
+              startingDeadlineSeconds: 600
+              jobTemplate:
+                spec:
+                  # restartPolicy Never means every retry is a fresh pod; 6 retries on an unschedulable
+                  # error just burn an hour and produce no useful logs.
+                  backoffLimit: 1
+                  activeDeadlineSeconds: 3600
+                  template:
+                    spec:
+                      restartPolicy: Never
+                      # Parity with the rest of the harbor stack; also dodges arch-mismatch start failures.
+                      nodeSelector:
+                        kubernetes.io/arch: amd64
+                      containers:
+                        - name: gc
+                          image: goharbor/registry-photon:v2.16.0
+                          resources:
+                            requests:
+                              memory: "32Mi"
+                              cpu: "10m"
+                            limits:
+                              memory: "64Mi"
+                          env:
+                            - name: HARBOR_ADMIN_PASSWORD
+                              valueFrom:
+                                secretKeyRef:
+                                  name: harbor-core
+                                  key: HARBOR_ADMIN_PASSWORD
+                            - name: CORE_URL
+                              value: http://harbor-core.db.svc.cluster.local
+                          command:
+                            - /bin/sh
+                            - "-ec"
+                            - |
+                              set -euo pipefail
+                              # POST /system/gc/schedule answers 202 as soon as the task is queued, so exiting there
+                              # reports success even when GC then dies in jobservice. Poll to a terminal status.
+                              gc=$(curl -sf --retry 3 --retry-delay 10 -D - -o /dev/null \
+                                -u "admin:$HARBOR_ADMIN_PASSWORD" -H 'Content-Type: application/json' \
+                                -d '{"schedule":{"type":"Manual"},"parameters":{"delete_untagged":true,"dry_run":false,"workers":1}}' \
+                                "$CORE_URL/api/v2.0/system/gc/schedule" \
+                                | tr -d '\r' | sed -n 's|^Location: .*/system/gc/||p')
+                              [ -n "$gc" ] || { echo "no gc id in Location header" >&2; exit 1; }
+                              for i in $(seq 1 100); do
+                                sleep 30
+                                st=$(curl -sf -u "admin:$HARBOR_ADMIN_PASSWORD" "$CORE_URL/api/v2.0/system/gc/$gc" \
+                                  | sed -n 's|.*"job_status":"\([A-Za-z]*\)".*|\1|p')
+                                echo "gc $gc: ${st:-unknown}"
+                                case "$st" in
+                                  Success) exit 0 ;;
+                                  Error|Stopped) exit 1 ;;
+                                esac
+                              done
+                              echo "gc $gc: no terminal status after 50m" >&2
+                              exit 1
+
   - name: harbor-middleware
     namespace: db
     chart: main/raw
@@ -18,6 +89,8 @@ releases:
   - name: harbor
     namespace: db
     chart: harbor/harbor
+    # Pinned: image tags below override the chart defaults, so an unpinned chart would drift on every `helm repo update`.
+    version: 1.19.4
     strategicMergePatches:
       - apiVersion: v1
         kind: ConfigMap
@@ -26,9 +99,129 @@ releases:
           namespace: db
         data:
           CORE_URL: http://harbor-core.db.svc.cluster.local
+      # exec probe runs `echo | psql` under pipefail; a probe timeout kills it with SIGPIPE (141) and the
+      # orphan reparents to postmaster (PID 1), which panics and restarts the cluster. TCP probe spawns
+      # no child, so a slow DB can no longer kill itself.
+      - apiVersion: apps/v1
+        kind: StatefulSet
+        metadata:
+          name: harbor-database
+          namespace: db
+        spec:
+          template:
+            spec:
+              containers:
+                - name: database
+                  livenessProbe:
+                    exec: null
+                    tcpSocket:
+                      port: 5432
+                    timeoutSeconds: 10
+                    periodSeconds: 15
+                  readinessProbe:
+                    exec: null
+                    tcpSocket:
+                      port: 5432
+                    timeoutSeconds: 10
+                    periodSeconds: 15
+      # chart hardcodes probe timeoutSeconds: 1 / periodSeconds: 10; under push load these components
+      # exceed 1s and get liveness-killed mid-request (500/502 to clients). Relax across the board.
+{{- range $w := list (dict "kind" "Deployment" "name" "harbor-core" "containers" (list "core"))
+                    (dict "kind" "Deployment" "name" "harbor-jobservice" "containers" (list "jobservice"))
+                    (dict "kind" "Deployment" "name" "harbor-portal" "containers" (list "portal"))
+                    (dict "kind" "Deployment" "name" "harbor-registry" "containers" (list "registry" "registryctl")) }}
+      - apiVersion: apps/v1
+        kind: {{ $w.kind }}
+        metadata:
+          name: {{ $w.name }}
+          namespace: db
+        spec:
+          template:
+            spec:
+              containers:
+{{- range $c := $w.containers }}
+                - name: {{ $c }}
+                  livenessProbe:
+                    timeoutSeconds: 10
+                    periodSeconds: 15
+                  readinessProbe:
+                    timeoutSeconds: 10
+                    periodSeconds: 15
+{{- end }}
+{{- end }}
+      # Distribution (goharbor/registry-photon) writes an HTTP access log per request independent of
+      # log.level; probes hit GET / every ~2s, spamming stdout. accesslog.disabled kills just that.
+      # Chart doesn't expose it, so replace the whole config.yml blob (charted @ v2.15.2; re-sync on bump).
+      - apiVersion: v1
+        kind: ConfigMap
+        metadata:
+          name: harbor-registry
+          namespace: db
+        data:
+          config.yml: |
+            version: 0.1
+            log:
+              level: error
+              # Silence the HTTP access log (one line per probe request on :5000).
+              # Distribution v2.8.3 schema: log.accesslog.disabled (http.accesslog does not exist).
+              accesslog:
+                disabled: true
+              fields:
+                service: registry
+            storage:
+              s3:
+                region: eu-central-1
+                bucket: dego-registry
+              cache:
+                layerinfo: redis
+              maintenance:
+                uploadpurging:
+                  enabled: true
+                  age: 168h
+                  interval: 24h
+                  dryrun: false
+              delete:
+                enabled: true
+              redirect:
+                disable: false
+            redis:
+              addr: redis-master.db.svc.cluster.local:6379
+              db: 2
+              username: ""
+              password: ""
+              readtimeout: 10s
+              writetimeout: 10s
+              dialtimeout: 10s
+              enableTLS: false
+              pool:
+                maxidle: 100
+                maxactive: 500
+                idletimeout: 60s
+            http:
+              addr: :5000
+              relativeurls: false
+              # set via environment variable
+              # secret: placeholder
+              debug:
+                addr: localhost:5001
+            auth:
+              htpasswd:
+                realm: harbor-registry-basic-realm
+                path: /etc/registry/passwd
+            validation:
+              disabled: true
+            compatibility:
+              schema1:
+                enabled: true
     values:
       - database:
           internal:
+            # harbor-db defaults to max_connections=1024; each idle backend costs ~17Mi
+            # RSS, so a handful of pooled core connections eats real memory on a 956Mi
+            # node. Pinned explicitly so an upstream default change cannot surprise us.
+            extraEnvVars:
+              - name: POSTGRES_MAX_CONNECTIONS
+                value: "1024"
             affinity:
               nodeAffinity:
                 requiredDuringSchedulingIgnoredDuringExecution:
@@ -38,11 +231,16 @@ releases:
                           operator: In
                           values:
                             - amd64
+            image:
+              repository: goharbor/harbor-db
+              # Whole stack pinned to v2.16.0: the registry DB is already on the 2.16 schema (schema_migrations=190,
+              # written by the previous core:dev build), so 2.15.x would be a downgrade.
+              tag: v2.16.0
             resources:
               limits:
-                memory: "300Mi"
+                memory: "500Mi"
               requests:
-                memory: "50Mi"
+                memory: "70Mi"
       - portal:
           affinity:
             nodeAffinity:
@@ -64,7 +262,7 @@ releases:
                           - jonapot
           image:
             repository: goharbor/harbor-portal
-            tag: dev
+            tag: v2.16.0
           resources:
             limits:
               memory: "300Mi"
@@ -74,7 +272,7 @@ releases:
           replicas: 2
           image:
             repository: goharbor/harbor-core
-            tag: dev
+            tag: v2.16.0
           affinity:
             podAntiAffinity:
               requiredDuringSchedulingIgnoredDuringExecution:
@@ -86,17 +284,14 @@ releases:
             nodeAffinity:
               requiredDuringSchedulingIgnoredDuringExecution:
                 nodeSelectorTerms:
-                  # The "- matchExpressions:" wrapper below was missing, so these
-                  # keys parsed as a bare list item and Helm rendered the whole
-                  # term as [{}]. An empty nodeSelectorTerm matches NO node, so
-                  # every new core pod sat Pending with
-                  # "8 node(s) didn't match Pod's node affinity/selector".
+                  # Required during scheduling, ignored during execution: this lets the
+                  # rollout place 2 replicas - the arch: amd64 filter left only xpand
+                  # eligible (jonapot excluded), so core replica 2 sat Pending forever.
+                  # Core is a Go binary, runs fine on arm64 (nagi ran one for 473d).
+                  # xpand re-eligible: replicas=2 + podAntiAffinity spread the pair, so even
+                  # if its per-node ingress breaks again (2026-09-15 incident, healed by restart),
+                  # at most one core lands there and the other replica covers.
                   - matchExpressions:
-                      - key: kubernetes.io/arch
-                        operator: In
-                        values:
-                          - amd64
-                      # jonapot is a 979Mi node already at ~95% memory limits.
                       - key: kubernetes.io/hostname
                         operator: NotIn
                         values:
@@ -108,6 +303,9 @@ releases:
               memory: "50Mi"
 
       - jobservice:
+          image:
+            repository: goharbor/harbor-jobservice
+            tag: v2.16.0
           maxJobWorkers: 1
           jobLoggers:
             - stdout
@@ -120,6 +318,11 @@ releases:
                         operator: In
                         values:
                           - amd64
+                      - key: kubernetes.io/hostname
+                        operator: NotIn
+                        # xpand: broken per-node LBNS ingress for harbor (2026-09-15), same as registry.
+                        values:
+                          - xpand
           replicas: 1
           resources:
             limits:
@@ -140,16 +343,19 @@ releases:
                         operator: NotIn
                         values:
                           - xpand
-          #controller:
-            #image:
-              #repository: bitnami/harbor-registryctl
-              #tag: 2.13.1
+          controller:
+            image:
+              repository: goharbor/harbor-registryctl
+              tag: v2.16.0
           registry:
+            image:
+              repository: goharbor/registry-photon
+              tag: v2.16.0
             resources:
               limits:
-                memory: "300Mi"
+                memory: "400Mi"
               requests:
-                memory: "50Mi"
+                memory: "70Mi"
       - expose:
           tls:
             enabled: false
