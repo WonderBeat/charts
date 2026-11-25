@@ -40,6 +40,16 @@ spec:
               wget -qO /tmp/pai-sho.tar.gz "$PAI_SHO_URL"
               tar -xzf /tmp/pai-sho.tar.gz -C /usr/local/bin --strip-components=1
               chmod +x /usr/local/bin/pai-sho
+
+              # No surface-repinning loop here. It was written for pai-sho
+              # 0.4.x, where every peer was auto-projected onto its own
+              # 127.0.1.x address and HAProxy needed one peer forced back onto
+              # 127.0.0.1. 0.5.2 changed the model: peers get a stable address
+              # and name on their own, the first peer lands on 127.0.0.1, and
+              # `surfaces` was renamed to `list` -- so the loop had become a
+              # silent no-op (stderr discarded, `|| true`) that only looked
+              # alive. Addressing is now explicit per port via `backendHost`,
+              # read from `pai-sho list` -> .peers[].ip.
               while true; do
                 pai-sho daemon --host 0.0.0.0 || true
                 echo "pai-sho exited, restarting in {{ .Values.paiSho.restartDelaySeconds }}s..."
@@ -47,7 +57,7 @@ spec:
               done
           env:
             - name: PAI_SHO_URL
-              value: {{ .Values.paiSho.downloadUrl | quote }}
+              value: {{ include "pai-sho-proxy.paiShoUrl" . | quote }}
           volumeMounts:
             - name: pai-sho-state
               mountPath: /root/.local/state/pai-sho

@@ -1,4 +1,5 @@
 {{- include "pai-sho-proxy.validatePorts" . }}
+{{- include "pai-sho-proxy.validateTimeouts" . }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -16,12 +17,45 @@ data:
       # Retry transparently while the pai-sho tunnel is down. Each failed
       # connect costs ~1s (timeout connect, plus HAProxy's internal retry
       # backoff), so retries ~= seconds of tunnel downtime absorbed.
+      #
+      # 5 was enough for a 4d+ stable tunnel; raise it if outages return.
       retries {{ .Values.proxy.retries }}
       retry-on conn-failure empty-response response-timeout 502 503
+      # Take the connection to a different server on retry when one exists. With
+      # a single backend server this is a no-op today, but it costs nothing and
+      # means adding a second tunnel peer does not silently keep pinning every
+      # retry to the dead one.
+      option redispatch
       timeout connect {{ .Values.proxy.timeouts.connect }}
       timeout client {{ .Values.proxy.timeouts.client }}
       timeout server {{ .Values.proxy.timeouts.server }}
       timeout queue {{ .Values.proxy.timeouts.queue }}
+      # ---- Idle keep-alive: who closes an idle connection first ------------
+      # Unset, this silently falls back to `timeout http-request` (30s), so
+      # HAProxy closes idle client connections sooner than clients expect: Go's
+      # default http.Transport pools an idle connection for 90s, and cloudflared
+      # for keepAliveTimeout=300s. Keeping the value above both makes the CLIENT
+      # the party that closes, which it can do safely because only the client
+      # knows whether it is about to reuse the socket.
+      #
+      # Honest scope: gomodel logged one
+      #   "use of closed network connection"
+      # in 48h, and ./verify-keepalive-race.sh could NOT reproduce that error
+      # from this timeout alone, because Go retries an idle-conn failure on a
+      # fresh connection. So treat this as removing a known sharp edge, not as
+      # the fix for the instability: that was queueing (see backend maxconn).
+      timeout http-keep-alive {{ .Values.proxy.timeouts.httpKeepAlive }}
+      # Bound how long a fully idle stream may hang after the response has
+      # started. `timeout server` only limits the gap between two events, so a
+      # wedged tunnel would otherwise hold the slot for the full hour.
+      timeout tunnel {{ .Values.proxy.timeouts.tunnel }}
+      # TCP keepalives in both directions. A pai-sho tunnel that dies without a
+      # FIN (the DC-to-DC case: the process is gone, nothing sends a reset)
+      # leaves a half-open socket that looks healthy to both ends. Keepalives
+      # are what eventually reap it, instead of a stream that hangs until
+      # `timeout server`.
+      option srvtcpka
+      option clitcpka
 
     # Liveness/readiness endpoint served by HAProxy itself, so the pod is not
     # restarted while the tunnel is temporarily down. Always http, regardless of
@@ -29,6 +63,11 @@ data:
     frontend health
       mode http
       bind 0.0.0.0:{{ .Values.proxy.healthPort }}
+      # kubelet probes every 10s on two probes, which is ~17k log lines a day
+      # of "Connect from ...". That buried the handful of real request lines
+      # that matter when diagnosing a flap, so keep this frontend silent.
+      option dontlognull
+      no log
       monitor-uri /healthz
 {{ range .Values.ports }}
     # ---- {{ .name }} ({{ .mode | default "http" }}) {{ with .comment }}: {{ . }}{{ end }}
@@ -53,5 +92,42 @@ data:
       mode {{ .mode | default "http" }}
       # No health check: the tunnel flaps, and marking the server down would
       # turn a retryable connect error into an immediate 503.
-      server tunnel 127.0.0.1:{{ .targetPort | default .port }}
+      #
+      # maxconn caps how many requests are in flight on the peer at once, and
+      # queues the rest HERE instead of inside the origin.
+      #
+      # This is what actually made the path feel unstable. llama.cpp runs with
+      # --parallel 1 (n_slots = 1), so it serialises regardless, but it accepts
+      # every connection first and the wait is invisible: measured over 48h of
+      # production traffic, TTFB tracked in-flight count almost perfectly.
+      #
+      #   in flight   requests   mean TTFB   max TTFB
+      #           1        190        1.5s      30.2s
+      #           2         76       18.0s     109.1s
+      #           4         15       67.7s     107.0s
+      #           6          2       83.9s     136.9s
+      #
+      # Every client abort in that window (8 of 284) was a slow request, 3 of
+      # them past 100s, which is where callers and Cloudflare give up. HAProxy's
+      # own queue time was 0ms throughout: it was not queueing, it was shipping
+      # everything straight into a one-slot server.
+      #
+      # With maxconn the wait becomes HAProxy's queue, which is measurable (the
+      # Tw log field), bounded (`timeout queue`), and fair (FIFO rather than
+      # llama.cpp interleaving prompt processing across connections).
+      {{- if eq (.mode | default "http") "http" }}
+      {{- with .backendHostHeader }}
+      # Rewrite Host for origins that enforce a Host allowlist. colibri answers
+      # 403 (not 401) to any Host it does not recognise, so without this every
+      # authenticated request through the Service fails while the same request
+      # with Host 127.0.0.1:8000 succeeds. Unset for other ports, which keeps
+      # the client's Host intact.
+      http-request set-header Host {{ . }}
+      {{- end }}
+      server tunnel {{ .backendHost | default "127.0.0.1" }}:{{ .targetPort | default .port }} maxconn {{ .backendMaxconn | default $.Values.proxy.backendMaxconn }}
+      {{- else }}
+      # tcp mode is a byte pipe for arbitrary protocols (databases, SSH), where
+      # a request-oriented concurrency cap does not apply.
+      server tunnel {{ .backendHost | default "127.0.0.1" }}:{{ .targetPort | default .port }}
+      {{- end }}
 {{ end }}

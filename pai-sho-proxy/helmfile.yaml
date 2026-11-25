@@ -4,6 +4,25 @@ releases:
     namespace: network
     values:
       # ---------------------------------------------------------------------
+      # PEER ADDRESSING. pai-sho 0.5.2 assigns each peer a stable address and
+      # name itself (first peer on 127.0.0.1, others on 127.0.1.x), so nothing
+      # is repinned any more. Each port names its own `backendHost`, read from
+      #   kubectl -n network exec deploy/pai-sho-proxy -c tunnel -- pai-sho list
+      # ---------------------------------------------------------------------
+      # Must equal --max-running-requests on the sglang-hmnd-server origin
+      # (2gpu profile: 8). Above it, requests queue invisibly on the server
+      # instead of measurably here; below it, GPU capacity sits idle.
+      #
+      # Note: live drift once happened here (deployed config had 8 while this
+      # file said 4). Re-apply after editing; verify with
+      #   kubectl -n network get cm pai-sho-proxy-haproxy -o jsonpath='{.data.haproxy\.cfg}'
+      - proxy:
+          backendMaxconn: 8
+          # Tunnel is 4d+ stable; 5 retries ~= 5s of absorbed downtime, and
+          # real failures surface as 503 in ~5s instead of ~20s.
+          retries: 5
+
+      # ---------------------------------------------------------------------
       # PORTS ROUTED OVER THE TUNNEL. This is the knob you actually edit.
       #
       # Each entry becomes a Service port, a container port, and an HAProxy
@@ -25,9 +44,9 @@ releases:
       #   comment     optional, rendered into haproxy.cfg.
       #
       # ADDING A PORT NEEDS BOTH SIDES. The peer must also expose it, via
-      # `sidecar.exposePorts` in ../llama-hmnd-server (comma separated). A port
+      # `sidecar.exposePorts` in ../sglang-hmnd-server (comma separated). A port
       # listed here but not exposed there will bind locally and then refuse
-      # connections, which surfaces as HAProxy retrying for ~75s then 503.
+      # connections, which surfaces as HAProxy retrying for ~20s (proxy.retries) then 503.
       #
       # After editing, `helmfile apply` recreates the pod (strategy: Recreate,
       # because the identity key is a single ReadWriteOnce volume), so expect a
@@ -38,10 +57,41 @@ releases:
       - ports:
           - name: llama
             port: 8080
+            # SGLang listens on 30000 where llama.cpp listened on 8080. The
+            # FRONTEND stays 8080 so every client (gomodel's base_url, the
+            # in-cluster Service) is unaffected by the engine swap; only the
+            # peer-side binding moved.
+            targetPort: 30000
+            # strata-qwen38 on pintel (helmfile -e pintel); must equal its strata.parallel.
+            backendMaxconn: 2
             mode: http
-            comment: llama.cpp OpenAI-compatible API, streams SSE
+            comment: Strata Qwen3.8 on pintel, OpenAI/Anthropic-compatible API
 
-          # Example of a second port. Uncomment, expose 5432 on the peer, and
+          # Second peer: strata-qwen38 chart on prime-burger (Qwen3.8 UD-IQ4_XS, 1x H100).
+          # Same pai-sho identity key as the former colibri pod (kept in the chart's Secret), so the
+          # peer name `dego-throwaway` and the 127.0.0.1 pin below still apply.
+          #
+          # No backendHost override: this peer is pinned onto 127.0.0.1 too.
+          # Peers only need distinct surface addresses when they collide on a
+          # PORT -- pintel serves 30000 and this one 8000, so both bind
+          # 127.0.0.1 and the default applies. Pinned once with
+          #   pai-sho project <peer key> --ip 127.0.0.1
+          # (by KEY, not name: `project`/`forget` are ambiguous when two peers
+          # share a name, e.g. a stale entry from a previous enrollment). The
+          # pin lives in the proxy's pai-sho-state PVC, so it survives restarts;
+          # a re-enrolled peer gets a NEW key and must be pinned again, else it
+          # lands on 127.0.1.x and this backend silently 503s.
+          - name: dego-throwaway
+            port: 8000
+            # Must equal strata.parallel in ../strata-qwen38: above it, requests queue invisibly inside Strata
+            # instead of measurably here (Tw log field).
+            backendMaxconn: 2
+            # Harmless for Strata (an API key disables its Host allowlist); kept for the 127.0.0.1 surface.
+            backendHostHeader: 127.0.0.1:8000
+            mode: http
+            comment: Strata Qwen3.8 OpenAI/Anthropic-compatible API
+
+          # Example of a non-HTTP port. Uncomment, expose 5432 on the peer, and
           # `helmfile apply`:
           #
           # - name: postgres

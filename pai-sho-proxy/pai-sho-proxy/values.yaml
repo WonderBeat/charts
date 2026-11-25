@@ -9,9 +9,27 @@ image:
   pullPolicy: IfNotPresent
 
 paiSho:
-  downloadUrl: "https://github.com/cablehead/pai-sho/releases/download/v0.3.0/pai-sho-v0.3.0-linux-arm64.tar.gz"
+  # ONE place to bump. The release URL repeats the version in both the tag path
+  # and the filename, so bumping the filename alone yields a 404 that shows up
+  # only as a crashlooping sidecar. The URL is derived from these two keys.
+  version: "v0.5.2"
+  # This side runs on an arm64 node (see `affinity` below).
+  arch: "linux-arm64"
+  # Escape hatch: set to bypass version/arch entirely (a fork, a local mirror).
+  downloadUrl: ""
   # Reconnect quickly: this delay is added directly to every tunnel outage.
   restartDelaySeconds: 1
+  # ---- Loopback surface pinning (pai-sho >= 0.4.0) -------------------------
+  # 0.4.0 auto-projects each peer onto its own surface address (127.0.1.x)
+  # rather than forwarding on 127.0.0.1. HAProxy backends name a fixed address,
+  # so without pinning, the tunnel comes up healthy and every request still
+  # 503s. A reconcile loop repins any surface that is not on loopback.
+  #
+  # Restrict to one peer label, or "" to pin every peer. With multiple peers,
+  # ONE of them can own 127.0.0.1: leave this empty only while a single peer is
+  # enrolled, otherwise they fight over the address.
+  # How often the reconcile loop checks. Also the worst-case delay before a
+  # newly enrolled or reconnected peer is reachable through HAProxy.
 
 # ---------------------------------------------------------------------------
 # Ports routed from this Service to the peer's exposed ports over the tunnel.
@@ -35,6 +53,19 @@ paiSho:
 #               and '-'.
 #   port        port to listen on, and by default the peer port to forward to.
 #   targetPort  optional, if the local pai-sho binding differs from `port`.
+#   backendHost optional, defaults to 127.0.0.1. pai-sho >= 0.4.0 projects EACH
+#               peer onto its own surface address (127.0.1.x) so two peers can
+#               serve the same port, but only ONE peer can be repinned onto
+#               127.0.0.1 (`paiSho.loopbackPeer`). A second peer's ports must
+#               name its surface here, or the backend connects to the loopback
+#               peer's port (or nothing) and every request 503s. Read the real
+#               address from the daemon rather than guessing the .x:
+#                 kubectl -n network exec deploy/pai-sho-proxy -c tunnel -- \
+#                   pai-sho surfaces
+#   backendMaxconn
+#               optional, defaults to proxy.backendMaxconn. Must match the
+#               origin's own concurrency (sglang --max-running-requests, or
+#               colibri --kv-slots), which differs per peer once there are two.
 #   mode        'http' or 'tcp'. http gives httplog, SSE-safe unbuffered
 #               streaming, and the http-request timeout. tcp is a blind byte
 #               pipe: use it for non-HTTP protocols (databases, SSH, TLS
@@ -56,23 +87,22 @@ proxy:
     repository: haproxy
     tag: "3.0-alpine"
     pullPolicy: IfNotPresent
-  # Each retry costs ~1s (verified empirically: retries=30 gives up at ~30s),
-  # so this absorbs roughly this many seconds of tunnel downtime before the
-  # client sees a 503. pai-sho outages last up to ~60s, so keep headroom.
-  retries: 75
+  retries: 5
   # Port for HAProxy's own /healthz, kept separate from proxied traffic so
   # probes succeed even while the tunnel is down. Must not collide with any
   # entry in `ports`.
   healthPort: 8081
   maxconn: 2048
+  backendMaxconn: 8
   timeouts:
-    connect: 2s
-    # Generations are long-running and streamed.
-    client: 1h
-    server: 1h
+    connect: 3s
+    client: 250s
+    server: 250s
     # Applies to http-mode frontends only; tcp mode has no notion of a request.
-    httpRequest: 30s
-    queue: 1m
+    httpRequest: 250s
+    queue: 2m
+    httpKeepAlive: 310s
+    tunnel: 250s
   resources:
     requests:
       memory: 32Mi
@@ -83,13 +113,18 @@ service:
 persistence:
   storageClass: local-path
   size: 1Mi
-  # Reuse an existing PVC instead of creating one. This is how the rename from
-  # llama-hmnd-client preserved the pai-sho identity key: the old release's
-  # claim (llama-hmnd-client-state) holds a private key on a local-path PV whose
-  # reclaimPolicy is Delete, so provisioning a fresh claim would have silently
-  # created a NEW identity and broken the peer relationship.
+  # Reuse an existing PVC instead of creating one, by name. Empty means the
+  # chart creates and owns `<fullname>-state`.
   #
-  # Set to "" to let the chart create and own `<fullname>-state` instead.
+  # This names the claim from the OLD llama-hmnd-client release because the
+  # state dir is the enrolled peer relationship, not just an identity: beside
+  # `key` sit `key.peers.json` and `key.surfaces.json`, which record the peer's
+  # public key and its 127.0.0.1 surface. Provisioning a fresh claim mints a new
+  # keypair AND loses the enrollment, so the far side keeps dialling a peer key
+  # that no longer exists and fails with "failed to connect to peer".
+  #
+  # The claim name looks stale and is not. Do not "clean it up" without first
+  # copying all three files onto the replacement.
   existingClaim: "llama-hmnd-client-state"
 
 podAnnotations: {}

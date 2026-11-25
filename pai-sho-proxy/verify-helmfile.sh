@@ -16,7 +16,7 @@
 # Run from this directory. No cluster required.
 set -uo pipefail
 cd "$(dirname "$0")" || exit 1
-SERVER=../llama-hmnd-server
+SERVER=../sglang-hmnd-server
 rc=0
 
 echo "=== server: sidecar maps merge (exposePorts AND ticket both survive) ==="
