@@ -11,5 +11,8 @@ spec:
       targetPort: kopia
       protocol: TCP
       name: kopia
+      {{- if .Values.service.nodePort }}
+      nodePort: {{ .Values.service.nodePort }}
+      {{- end }}
   selector:
     {{- include "kopia-server.selectorLabels" . | nindent 4 }}

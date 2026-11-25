@@ -33,12 +33,15 @@ releases:
           limits:
             memory: 2Gi
       #- rootless: true
+      # arch-bound: buildkitd reports only the platforms of its own node, and
+      # meridian images are arm64. Excluding jonapot alone let it land on xpand
+      # (amd64) on a reschedule, which silently loses the arm64 platform.
       - affinity:
           nodeAffinity:
             requiredDuringSchedulingIgnoredDuringExecution:
               nodeSelectorTerms:
               - matchExpressions:
-                - key: kubernetes.io/hostname
-                  operator: NotIn
+                - key: kubernetes.io/arch
+                  operator: In
                   values:
-                  - jonapot
+                  - arm64

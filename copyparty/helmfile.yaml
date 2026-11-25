@@ -4,6 +4,10 @@ releases:
     chart: oci://ghcr.io/ernail/charts/copyparty
     version: 2.0.0
     values:
+      - readinessProbe:
+        httpGet:
+          path: "/?reset=/._"
+          port: "http"
       - image:
           tag: latest
       - serviceAccount:

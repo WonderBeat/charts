@@ -23,21 +23,21 @@ service:
 config: |-
   defaults
     mode http
-    timeout client 10s
+    timeout client 123s
     timeout connect 5s
-    timeout server 10s
-    timeout http-request 10s
+    timeout server 123s
+    timeout http-request 123s
   frontend public_web_servers
     mode http
     log global
-    timeout client 30s
+    timeout client 123s
     bind *:80
     default_backend public_web_servers
 
   frontend api_servers
     mode http
     log global
-    timeout client 30s
+    timeout client 123s
     bind *:8000
     default_backend api_servers
 

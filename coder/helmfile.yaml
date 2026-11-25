@@ -16,6 +16,11 @@ releases:
           repository: bitnamilegacy/postgresql
           tag: 16.6.0
       - primary:
+          # Default is 100. Coder holds ~4 pooled connections, and every idle backend
+          # is a process costing 15-38Mi RSS, so the default headroom is worth more
+          # than it buys inside a 600Mi limit.
+          extendedConfiguration: |
+            max_connections = 50
           resources:
             requests:
                 memory: 400Mi
@@ -47,6 +52,12 @@ releases:
     needs:
       - db/coder-db
     chart: coder-v2/coder
+    # Pinned deliberately. Without this, the chart floats to whatever is latest
+    # in the repo, so an unrelated values change (e.g. fixing resources) would
+    # also drag in a Coder app upgrade with Postgres schema migrations. The
+    # running version was 2.32.0 while latest had moved to 2.35.3. Bump this
+    # line as its own reviewed commit, not as a side effect.
+    version: 2.32.0
     values:
       - coder:
           # NOTE: this block used to be

@@ -73,8 +73,8 @@ data:
           max_fails 5
           max_concurrent 500
         }
-        cache 30 {
-          success 9984 30
+        cache 40 {
+          success 9984 40
           denial 9984 10
         }
         loop
