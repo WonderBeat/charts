@@ -1,6 +1,0 @@
-apiVersion: v2
-name: earthly
-description: A Helm chart for earthly remote build server
-type: application
-version: 0.1.0
-engine: gotpl
